@@ -29,8 +29,8 @@ right_eye_keypoints = [362, 384, 387, 263, 373, 380]
 mouth_keypoints = [61, 39, 0, 269, 291, 405, 17, 181]
 
 # Thresholds for the eye aspect ratio and mouth aspect ratio
-EAR_THRESHOLD = -10
-MAR_THRESHOLD = 125
+EAR_THRESHOLD = -5
+MAR_THRESHOLD = 115
 
 # Aspect ratios from previous frames
 ear_history = []
@@ -40,7 +40,7 @@ mar_history = []
 HISTORY_LENGTH = 30
 
 # Number of frames to use for calibration
-CALIBRATION_FRAME_COUNT = 100
+CALIBRATION_FRAME_COUNT = 200
 
 
 def euclidean_distance(p1: landmark_pb2.NormalizedLandmark, p2: landmark_pb2.NormalizedLandmark) -> float:
@@ -64,6 +64,56 @@ def mouth_aspect_ratio(face_landmarks: landmark_pb2.NormalizedLandmarkList, keyp
     return (a + b + c) / (2.0 * d)
 
 
+def draw_landmarks(current_frame: np.ndarray, face_landmarks: list[vision.FaceLandmarker]) -> None:
+    face_landmarks_proto = landmark_pb2.NormalizedLandmarkList()
+    face_landmarks_proto.landmark.extend([
+        landmark_pb2.NormalizedLandmark(x=landmark.x,
+                                        y=landmark.y,
+                                        z=landmark.z) for
+        landmark in
+        face_landmarks
+    ])
+
+    # Create a new landmark list for the left eye keypoints
+    left_eye_landmarks = landmark_pb2.NormalizedLandmarkList()
+    left_eye_landmarks.landmark.extend([face_landmarks_proto.landmark[i] for i in left_eye_keypoints])
+
+    # Draw the left eye keypoints
+    mp_drawing.draw_landmarks(
+        image=current_frame,
+        landmark_list=left_eye_landmarks,
+        connections=[],
+        landmark_drawing_spec=mp_drawing_styles.get_default_face_mesh_tesselation_style(),
+        connection_drawing_spec=None
+    )
+
+    # Create a new landmark list for the right eye keypoints
+    right_eye_landmarks = landmark_pb2.NormalizedLandmarkList()
+    right_eye_landmarks.landmark.extend([face_landmarks_proto.landmark[i] for i in right_eye_keypoints])
+
+    # Draw the right eye keypoints
+    mp_drawing.draw_landmarks(
+        image=current_frame,
+        landmark_list=right_eye_landmarks,
+        connections=[],
+        landmark_drawing_spec=mp_drawing_styles.get_default_face_mesh_tesselation_style(),
+        connection_drawing_spec=None
+    )
+
+    # Create a new landmark list for the mouth keypoints
+    mouth_landmarks = landmark_pb2.NormalizedLandmarkList()
+    mouth_landmarks.landmark.extend([face_landmarks_proto.landmark[i] for i in mouth_keypoints])
+
+    # Draw the mouth keypoints
+    mp_drawing.draw_landmarks(
+        image=current_frame,
+        landmark_list=mouth_landmarks,
+        connections=[],
+        landmark_drawing_spec=mp_drawing_styles.get_default_face_mesh_tesselation_style(),
+        connection_drawing_spec=None
+    )
+
+
 def calibrate(calibration_frame_count: int, cap: cv2.VideoCapture,
               detector: vision.FaceLandmarker) -> tuple[float, float, float, float]:
     """Calibrate the eye aspect ratio and mouth aspect ratio thresholds.
@@ -85,12 +135,16 @@ def calibrate(calibration_frame_count: int, cap: cv2.VideoCapture,
                 'ERROR: Unable to read from webcam. Please verify your webcam settings.'
             )
 
+        image = cv2.flip(image, 1)
+
         # Convert the image from BGR to RGB as required by the TFLite model.
         rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_image)
 
         # Run face landmarker using the model.
         detector.detect_async(mp_image, time.time_ns() // 1_000_000)
+
+        current_frame = image
 
         if DETECTION_RESULT:
             # Calculate the aspect ratios for the left and right eyes
@@ -101,6 +155,18 @@ def calibrate(calibration_frame_count: int, cap: cv2.VideoCapture,
             # Update the calibration variables
             ear_values.append((left_ear + right_ear) / 2)
             mar_values.append(mar)
+
+
+            draw_landmarks(current_frame, DETECTION_RESULT.face_landmarks[0])
+        
+        # Display calibrating message
+        cv2.putText(current_frame, "Keep a neutral face for calibration...", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        
+        cv2.imshow('face_landmarker', current_frame)
+
+        # Stop the program if the ESC key is pressed.
+        if cv2.waitKey(1) == 27:
+            break
 
     # Calculate the mean and standard deviation of the aspect ratios
     ear_mean, ear_std = np.mean(ear_values), np.std(ear_values)
@@ -177,16 +243,7 @@ def run(model: str, num_faces: int,
         current_frame = image
 
         if DETECTION_RESULT:
-            # Draw landmarks.
             for face_landmarks in DETECTION_RESULT.face_landmarks:
-                face_landmarks_proto = landmark_pb2.NormalizedLandmarkList()
-                face_landmarks_proto.landmark.extend([
-                    landmark_pb2.NormalizedLandmark(x=landmark.x,
-                                                    y=landmark.y,
-                                                    z=landmark.z) for
-                    landmark in
-                    face_landmarks
-                ])
                 
                 # Calculate the aspect ratios for the left and right eyes
                 left_ear = eye_aspect_ratio(face_landmarks, left_eye_keypoints)
@@ -210,10 +267,10 @@ def run(model: str, num_faces: int,
 
                 # Check if the average aspect ratios are below the thresholds
                 if np.mean(ear_history) < EAR_THRESHOLD:
-                    print("Microsleep detected at time: ", time.asctime(time.localtime(time.time())))
+                    print("Microsleep detected at time: ", time.asctime(time.localtime(time.time())), "with EAR: ", np.mean(ear_history))
                     cv2.putText(current_frame, "Microsleep detected!", (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
                 if np.mean(mar_history) > MAR_THRESHOLD:
-                    print("Yawning detected at time: ", time.asctime(time.localtime(time.time())))
+                    print("Yawning detected at time: ", time.asctime(time.localtime(time.time())), "with MAR: ", np.mean(mar_history))
                     cv2.putText(current_frame, "Yawning detected!", (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
                 # Display the aspect ratios on the image
@@ -223,45 +280,8 @@ def run(model: str, num_faces: int,
                             (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
                 cv2.putText(current_frame, "Mouth aspect ratio: {:.2f}".format(mar), 
                             (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-
-                # Create a new landmark list for the left eye keypoints
-                left_eye_landmarks = landmark_pb2.NormalizedLandmarkList()
-                left_eye_landmarks.landmark.extend([face_landmarks_proto.landmark[i] for i in left_eye_keypoints])
-
-                # Draw the left eye keypoints
-                mp_drawing.draw_landmarks(
-                    image=current_frame,
-                    landmark_list=left_eye_landmarks,
-                    connections=[],
-                    landmark_drawing_spec=mp_drawing_styles.get_default_face_mesh_tesselation_style(),
-                    connection_drawing_spec=None
-                )
-
-                # Create a new landmark list for the right eye keypoints
-                right_eye_landmarks = landmark_pb2.NormalizedLandmarkList()
-                right_eye_landmarks.landmark.extend([face_landmarks_proto.landmark[i] for i in right_eye_keypoints])
-
-                # Draw the right eye keypoints
-                mp_drawing.draw_landmarks(
-                    image=current_frame,
-                    landmark_list=right_eye_landmarks,
-                    connections=[],
-                    landmark_drawing_spec=mp_drawing_styles.get_default_face_mesh_tesselation_style(),
-                    connection_drawing_spec=None
-                )
-
-                # Create a new landmark list for the mouth keypoints
-                mouth_landmarks = landmark_pb2.NormalizedLandmarkList()
-                mouth_landmarks.landmark.extend([face_landmarks_proto.landmark[i] for i in mouth_keypoints])
-
-                # Draw the mouth keypoints
-                mp_drawing.draw_landmarks(
-                    image=current_frame,
-                    landmark_list=mouth_landmarks,
-                    connections=[],
-                    landmark_drawing_spec=mp_drawing_styles.get_default_face_mesh_tesselation_style(),
-                    connection_drawing_spec=None
-                )
+                
+                draw_landmarks(current_frame, face_landmarks)
 
         cv2.imshow('face_landmarker', current_frame)
 
