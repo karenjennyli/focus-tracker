@@ -39,8 +39,9 @@ mar_history = []
 # The maximum length of the aspect ratio history
 HISTORY_LENGTH = 30
 
-# Number of frames to use for calibration
-CALIBRATION_FRAME_COUNT = 200
+# Length of calibration
+NEUTRAL_FACE_TIME = 5
+YAWN_TIME = 5
 
 
 def euclidean_distance(p1: landmark_pb2.NormalizedLandmark, p2: landmark_pb2.NormalizedLandmark) -> float:
@@ -114,21 +115,57 @@ def draw_landmarks(current_frame: np.ndarray, face_landmarks: list[vision.FaceLa
     )
 
 
-def calibrate(calibration_frame_count: int, cap: cv2.VideoCapture,
-              detector: vision.FaceLandmarker) -> tuple[float, float, float, float]:
+def calibrate(cap: cv2.VideoCapture, detector: vision.FaceLandmarker,
+              width: int, height: int) -> tuple[float, float, float, float]:
     """Calibrate the eye aspect ratio and mouth aspect ratio thresholds.
 
     Args:
-        calibration_frame_count: The number of frames to use for calibration.
         detector: The face landmarker model.
+        width: The width of the frame captured from the camera.
+        height: The height of the frame captured from the camera.
+
+    Returns:
+        The mean and standard deviation of the eye aspect ratio and mouth aspect ratio.
     """
 
-    # Initialize the calibration variables
+    # Wait for the user to press the space bar to start the neutral face calibration
+    while cap.isOpened():
+        success, image = cap.read()
+        if not success:
+            sys.exit(
+                'ERROR: Unable to read from webcam. Please verify your webcam settings.'
+            )
+
+        image = cv2.flip(image, 1)
+
+        # Convert the image from BGR to RGB as required by the TFLite model.
+        rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_image)
+
+        # Run face landmarker using the model.
+        detector.detect_async(mp_image, time.time_ns() // 1_000_000)
+
+        current_frame = image
+
+        if DETECTION_RESULT:
+            draw_landmarks(current_frame, DETECTION_RESULT.face_landmarks[0])
+
+        # Display the calibration instructions
+        cv2.putText(current_frame, f"Keep a neutral face for {NEUTRAL_FACE_TIME} seconds. Press the space bar to start.", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+
+        cv2.imshow('face_landmarker', current_frame)
+
+        # Start the calibration if the space bar is pressed
+        if cv2.waitKey(1) == 32:
+            start_time = time.time()
+            break
+
+    # Initialize the EAR and MAR calibration variables
     ear_values = []
     mar_values = []
 
-    # Capture the calibration frames
-    for i in range(calibration_frame_count):
+    # Capture the neutral face for NEUTRAL_FACE_TIME seconds
+    while time.time() - start_time < NEUTRAL_FACE_TIME:
         success, image = cap.read()
         if not success:
             sys.exit(
@@ -156,11 +193,10 @@ def calibrate(calibration_frame_count: int, cap: cv2.VideoCapture,
             ear_values.append((left_ear + right_ear) / 2)
             mar_values.append(mar)
 
-
             draw_landmarks(current_frame, DETECTION_RESULT.face_landmarks[0])
         
-        # Display calibrating message
-        cv2.putText(current_frame, "Keep a neutral face for calibration...", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        # Display calibrating message and seconds left
+        cv2.putText(current_frame, "Finished in: " + str(NEUTRAL_FACE_TIME - int(time.time() - start_time)), (width // 2 - 100, height // 2 - 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
         
         cv2.imshow('face_landmarker', current_frame)
 
@@ -221,7 +257,7 @@ def run(model: str, num_faces: int,
     detector = vision.FaceLandmarker.create_from_options(options)
 
     # Calibrate the eye aspect ratio and mouth aspect ratio thresholds
-    ear_mean, ear_std, mar_mean, mar_std = calibrate(CALIBRATION_FRAME_COUNT, cap, detector)
+    ear_mean, ear_std, mar_mean, mar_std = calibrate(cap, detector, width, height)
 
     # Continuously capture images from the camera and run inference
     while cap.isOpened():
