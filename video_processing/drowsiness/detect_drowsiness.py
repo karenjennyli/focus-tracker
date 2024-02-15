@@ -29,8 +29,8 @@ right_eye_keypoints = [362, 384, 387, 263, 373, 380]
 mouth_keypoints = [61, 39, 0, 269, 291, 405, 17, 181]
 
 # Thresholds for the eye aspect ratio and mouth aspect ratio
-EAR_THRESHOLD = -5
-MAR_THRESHOLD = 115
+EAR_THRESHOLD = None
+MAR_THRESHOLD = None
 
 # Aspect ratios from previous frames
 ear_history = []
@@ -42,6 +42,7 @@ HISTORY_LENGTH = 30
 # Length of calibration
 NEUTRAL_FACE_TIME = 5
 YAWN_TIME = 5
+EYE_CLOSE_TIME = 5
 
 
 def euclidean_distance(p1: landmark_pb2.NormalizedLandmark, p2: landmark_pb2.NormalizedLandmark) -> float:
@@ -128,6 +129,8 @@ def calibrate(cap: cv2.VideoCapture, detector: vision.FaceLandmarker,
         The mean and standard deviation of the eye aspect ratio and mouth aspect ratio.
     """
 
+    # NEUTRAL FACE CALIBRATION
+
     # Wait for the user to press the space bar to start the neutral face calibration
     while cap.isOpened():
         success, image = cap.read()
@@ -151,7 +154,8 @@ def calibrate(cap: cv2.VideoCapture, detector: vision.FaceLandmarker,
             draw_landmarks(current_frame, DETECTION_RESULT.face_landmarks[0])
 
         # Display the calibration instructions
-        cv2.putText(current_frame, f"Keep a neutral face for {NEUTRAL_FACE_TIME} seconds. Press the space bar to start.", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        cv2.putText(current_frame, f"Keep a steady neutral face with eyes open for {NEUTRAL_FACE_TIME} seconds.", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        cv2.putText(current_frame, "Press the space bar to start.", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
         cv2.imshow('face_landmarker', current_frame)
 
@@ -160,9 +164,9 @@ def calibrate(cap: cv2.VideoCapture, detector: vision.FaceLandmarker,
             start_time = time.time()
             break
 
-    # Initialize the EAR and MAR calibration variables
-    ear_values = []
-    mar_values = []
+    # Initialize the neutral EAR and MAR calibration variables
+    neutral_ear_values = []
+    neutral_mar_values = []
 
     # Capture the neutral face for NEUTRAL_FACE_TIME seconds
     while time.time() - start_time < NEUTRAL_FACE_TIME:
@@ -184,14 +188,14 @@ def calibrate(cap: cv2.VideoCapture, detector: vision.FaceLandmarker,
         current_frame = image
 
         if DETECTION_RESULT:
-            # Calculate the aspect ratios for the left and right eyes
+            # Calculate the aspect ratios for the left and right eyes and the mouth
             left_ear = eye_aspect_ratio(DETECTION_RESULT.face_landmarks[0], left_eye_keypoints)
             right_ear = eye_aspect_ratio(DETECTION_RESULT.face_landmarks[0], right_eye_keypoints)
             mar = mouth_aspect_ratio(DETECTION_RESULT.face_landmarks[0], mouth_keypoints)
 
             # Update the calibration variables
-            ear_values.append((left_ear + right_ear) / 2)
-            mar_values.append(mar)
+            neutral_ear_values.append((left_ear + right_ear) / 2)
+            neutral_mar_values.append(mar)
 
             draw_landmarks(current_frame, DETECTION_RESULT.face_landmarks[0])
         
@@ -199,17 +203,160 @@ def calibrate(cap: cv2.VideoCapture, detector: vision.FaceLandmarker,
         cv2.putText(current_frame, "Finished in: " + str(NEUTRAL_FACE_TIME - int(time.time() - start_time)), (width // 2 - 100, height // 2 - 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
         
         cv2.imshow('face_landmarker', current_frame)
+        cv2.waitKey(1)
 
-        # Stop the program if the ESC key is pressed.
-        if cv2.waitKey(1) == 27:
+    # YAWN CALIBRATION
+        
+    # Wait for the user to press the space bar to start the yawn calibration
+    while cap.isOpened():
+        success, image = cap.read()
+        if not success:
+            sys.exit(
+                'ERROR: Unable to read from webcam. Please verify your webcam settings.'
+            )
+
+        image = cv2.flip(image, 1)
+
+        # Convert the image from BGR to RGB as required by the TFLite model.
+        rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_image)
+
+        # Run face landmarker using the model.
+        detector.detect_async(mp_image, time.time_ns() // 1_000_000)
+
+        current_frame = image
+
+        if DETECTION_RESULT:
+            draw_landmarks(current_frame, DETECTION_RESULT.face_landmarks[0])
+
+        # Display the calibration instructions
+        cv2.putText(current_frame, f"Yawn for {YAWN_TIME} seconds. Press the space bar to start.", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+
+        cv2.imshow('face_landmarker', current_frame)
+
+        # Start the calibration if the space bar is pressed
+        if cv2.waitKey(1) == 32:
+            start_time = time.time()
             break
 
+    # Initialize the yawn MAR calibration variable
+    yawn_mar_values = []
+
+    # Capture the neutral face for YAWN_TIME seconds
+    while time.time() - start_time < YAWN_TIME:
+        success, image = cap.read()
+        if not success:
+            sys.exit(
+                'ERROR: Unable to read from webcam. Please verify your webcam settings.'
+            )
+
+        image = cv2.flip(image, 1)
+
+        # Convert the image from BGR to RGB as required by the TFLite model.
+        rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_image)
+
+        # Run face landmarker using the model.
+        detector.detect_async(mp_image, time.time_ns() // 1_000_000)
+
+        current_frame = image
+
+        if DETECTION_RESULT:
+            # Calculate the mouth aspect ratio
+            mar = mouth_aspect_ratio(DETECTION_RESULT.face_landmarks[0], mouth_keypoints)
+            yawn_mar_values.append(mar)
+
+            draw_landmarks(current_frame, DETECTION_RESULT.face_landmarks[0])
+        
+        # Display calibrating message and seconds left
+        cv2.putText(current_frame, "Finished in: " + str(YAWN_TIME - int(time.time() - start_time)), (width // 2 - 100, height // 2 - 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        
+        cv2.imshow('face_landmarker', current_frame)
+        cv2.waitKey(1)
+
+    # MICROSLEEP CALIBRATION
+        
+    # Wait for the user to press the space bar to start the microsleep calibration
+    while cap.isOpened():
+        success, image = cap.read()
+        if not success:
+            sys.exit(
+                'ERROR: Unable to read from webcam. Please verify your webcam settings.'
+            )
+
+        image = cv2.flip(image, 1)
+
+        # Convert the image from BGR to RGB as required by the TFLite model.
+        rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_image)
+
+        # Run face landmarker using the model.
+        detector.detect_async(mp_image, time.time_ns() // 1_000_000)
+
+        current_frame = image
+
+        if DETECTION_RESULT:
+            draw_landmarks(current_frame, DETECTION_RESULT.face_landmarks[0])
+
+        # Display the calibration instructions
+        cv2.putText(current_frame, f"Close your eyes for {EYE_CLOSE_TIME} seconds. Press the space bar to start.", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+
+        cv2.imshow('face_landmarker', current_frame)
+
+        # Start the calibration if the space bar is pressed
+        if cv2.waitKey(1) == 32:
+            start_time = time.time()
+            break
+
+    # Initialize the microsleep EAR calibration variable
+    eye_close_ear_values = []
+
+    # Capture the eyes closed for EYE_CLOSE_TIME seconds
+    while time.time() - start_time < EYE_CLOSE_TIME:
+        success, image = cap.read()
+        if not success:
+            sys.exit(
+                'ERROR: Unable to read from webcam. Please verify your webcam settings.'
+            )
+
+        image = cv2.flip(image, 1)
+
+        # Convert the image from BGR to RGB as required by the TFLite model.
+        rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_image)
+
+        # Run face landmarker using the model.
+        detector.detect_async(mp_image, time.time_ns() // 1_000_000)
+
+        current_frame = image
+
+        if DETECTION_RESULT:
+            # Calculate the eye aspect ratio
+            left_ear = eye_aspect_ratio(DETECTION_RESULT.face_landmarks[0], left_eye_keypoints)
+            right_ear = eye_aspect_ratio(DETECTION_RESULT.face_landmarks[0], right_eye_keypoints)
+            eye_close_ear_values.append((left_ear + right_ear) / 2)
+
+            draw_landmarks(current_frame, DETECTION_RESULT.face_landmarks[0])
+        
+        # Display calibrating message and seconds left
+        cv2.putText(current_frame, "Finished in: " + str(EYE_CLOSE_TIME - int(time.time() - start_time)), (width // 2 - 100, height // 2 - 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        
+        cv2.imshow('face_landmarker', current_frame)
+        cv2.waitKey(1)
+
     # Calculate the mean and standard deviation of the aspect ratios
-    ear_mean, ear_std = np.mean(ear_values), np.std(ear_values)
-    mar_mean, mar_std = np.mean(mar_values), np.std(mar_values)
+    neutral_ear_mean, neutral_ear_std = np.mean(neutral_ear_values), np.std(neutral_ear_values)
+    neutral_mar_mean, neutral_mar_std = np.mean(neutral_mar_values), np.std(neutral_mar_values)
+
+    # Calculate the thresholds for the eye aspect ratio and mouth aspect ratio
+    global EAR_THRESHOLD, MAR_THRESHOLD
+    EAR_THRESHOLD = np.mean(neutral_ear_values) + np.mean(neutral_ear_values) * 0.05
+    EAR_THRESHOLD = (EAR_THRESHOLD - neutral_ear_mean) / neutral_ear_std
+    MAR_THRESHOLD = np.mean(yawn_mar_values) - np.mean(yawn_mar_values) * 0.1
+    MAR_THRESHOLD = (MAR_THRESHOLD - neutral_mar_mean) / neutral_mar_std
 
     # Return the mean and standard deviation of the aspect ratios
-    return ear_mean, ear_std, mar_mean, mar_std
+    return neutral_ear_mean, neutral_ear_std, neutral_mar_mean, neutral_mar_std
 
 
 def run(model: str, num_faces: int,
@@ -303,10 +450,10 @@ def run(model: str, num_faces: int,
 
                 # Check if the average aspect ratios are below the thresholds
                 if np.mean(ear_history) < EAR_THRESHOLD:
-                    print("Microsleep detected at time: ", time.asctime(time.localtime(time.time())), "with EAR: ", np.mean(ear_history))
+                    # print("Microsleep detected at time: ", time.asctime(time.localtime(time.time())), "with EAR: ", np.mean(ear_history))
                     cv2.putText(current_frame, "Microsleep detected!", (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
                 if np.mean(mar_history) > MAR_THRESHOLD:
-                    print("Yawning detected at time: ", time.asctime(time.localtime(time.time())), "with MAR: ", np.mean(mar_history))
+                    # print("Yawning detected at time: ", time.asctime(time.localtime(time.time())), "with MAR: ", np.mean(mar_history))
                     cv2.putText(current_frame, "Yawning detected!", (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
                 # Display the aspect ratios on the image
