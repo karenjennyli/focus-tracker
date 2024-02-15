@@ -350,7 +350,7 @@ def calibrate(cap: cv2.VideoCapture, detector: vision.FaceLandmarker,
 
     # Calculate the thresholds for the eye aspect ratio and mouth aspect ratio
     global EAR_THRESHOLD, MAR_THRESHOLD
-    EAR_THRESHOLD = np.mean(neutral_ear_values) + np.mean(neutral_ear_values) * 0.05
+    EAR_THRESHOLD = np.mean(eye_close_ear_values) + np.mean(eye_close_ear_values) * 0.1
     EAR_THRESHOLD = (EAR_THRESHOLD - neutral_ear_mean) / neutral_ear_std
     MAR_THRESHOLD = np.mean(yawn_mar_values) - np.mean(yawn_mar_values) * 0.1
     MAR_THRESHOLD = (MAR_THRESHOLD - neutral_mar_mean) / neutral_mar_std
@@ -463,6 +463,12 @@ def run(model: str, num_faces: int,
                             (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
                 cv2.putText(current_frame, "Mouth aspect ratio: {:.2f}".format(mar), 
                             (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+                
+                # Display the calibration thresholds on the image
+                cv2.putText(current_frame, "EAR_THRESHOLD: {:.2f}".format(EAR_THRESHOLD),
+                            (width - 400, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+                cv2.putText(current_frame, "MAR_THRESHOLD: {:.2f}".format(MAR_THRESHOLD),
+                            (width - 400, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
                 
                 draw_landmarks(current_frame, face_landmarks)
 
