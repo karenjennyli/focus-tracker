@@ -3,6 +3,7 @@
 import argparse
 import sys
 import time
+from datetime import datetime
 
 import cv2
 import mediapipe as mp
@@ -47,6 +48,11 @@ EYE_CLOSE_TIME = 5
 # Minimum time for yawn and eye close detection in seconds
 YAWN_MIN_TIME = 4
 MICROSLEEP_MIN_TIME = 2
+
+# Calculate FPS
+FPS_AVG_FRAME_COUNT = 10
+COUNTER, FPS = 0, 0
+START_TIME = time.time()
 
 
 def euclidean_distance(p1: landmark_pb2.NormalizedLandmark, p2: landmark_pb2.NormalizedLandmark) -> float:
@@ -135,6 +141,9 @@ def capture_face_landmarks(cap, detector, calibration_time, width, height, calib
         detector.detect_async(mp_image, time.time_ns() // 1_000_000)
         current_frame = image
 
+        # Display the FPS on the image
+        cv2.putText(current_frame, "FPS: {:.2f}".format(FPS), (10, height - 400), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+
         if DETECTION_RESULT and DETECTION_RESULT.face_landmarks:
             draw_landmarks(current_frame, DETECTION_RESULT.face_landmarks[0])
 
@@ -212,8 +221,15 @@ def run(model: str, num_faces: int,
 
     def save_result(result: vision.FaceLandmarkerResult,
                     unused_output_image: mp.Image, timestamp_ms: int):
-        global DETECTION_RESULT
+        global FPS, COUNTER, START_TIME, DETECTION_RESULT
+
+        # Calculate the FPS
+        if COUNTER % FPS_AVG_FRAME_COUNT == 0:
+            FPS = FPS_AVG_FRAME_COUNT / (time.time() - START_TIME)
+            START_TIME = time.time()
+
         DETECTION_RESULT = result
+        COUNTER += 1
 
     # Initialize the face landmarker model
     base_options = python.BaseOptions(model_asset_path=model)
@@ -230,6 +246,10 @@ def run(model: str, num_faces: int,
 
     # Calibrate the eye aspect ratio and mouth aspect ratio thresholds
     ear_mean, ear_std, mar_mean, mar_std = calibrate(cap, detector, width, height)
+
+    # Initialize start times for microsleep and yawning detection
+    microsleep_start_time = None
+    yawn_start_time = None
 
     # Continuously capture images from the camera and run inference
     while cap.isOpened():
@@ -249,52 +269,68 @@ def run(model: str, num_faces: int,
         detector.detect_async(mp_image, time.time_ns() // 1_000_000)
 
         current_frame = image
+        
+        # Display the FPS on the image
+        cv2.putText(current_frame, "FPS: {:.2f}".format(FPS), (10, height - 400), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
-        if DETECTION_RESULT:
-            for face_landmarks in DETECTION_RESULT.face_landmarks:
-                # Calculate the aspect ratios for the left and right eyes
-                left_ear = eye_aspect_ratio(face_landmarks, LEFT_EYE_KEYPOINTS)
-                right_ear = eye_aspect_ratio(face_landmarks, RIGHT_EYE_KEYPOINTS)
-                mar = mouth_aspect_ratio(face_landmarks, MOUTH_KEYPOINTS)
+        if DETECTION_RESULT and DETECTION_RESULT.face_landmarks:
+            face_landmarks = DETECTION_RESULT.face_landmarks[0]
 
-                # Normalize the aspect ratios
-                left_ear = (left_ear - ear_mean) / ear_std
-                right_ear = (right_ear - ear_mean) / ear_std
-                mar = (mar - mar_mean) / mar_std
+            # Calculate the aspect ratios for the left and right eyes
+            left_ear = eye_aspect_ratio(face_landmarks, LEFT_EYE_KEYPOINTS)
+            right_ear = eye_aspect_ratio(face_landmarks, RIGHT_EYE_KEYPOINTS)
+            mar = mouth_aspect_ratio(face_landmarks, MOUTH_KEYPOINTS)
 
-                # Append the aspect ratios to the history
-                ear_history.append(left_ear)
-                mar_history.append(mar)
+            # Normalize the aspect ratios
+            left_ear = (left_ear - ear_mean) / ear_std
+            right_ear = (right_ear - ear_mean) / ear_std
+            mar = (mar - mar_mean) / mar_std
 
-                # Remove the oldest aspect ratios if the history is too long
-                if len(ear_history) > HISTORY_LENGTH:
-                    ear_history.pop(0)
-                if len(mar_history) > HISTORY_LENGTH:
-                    mar_history.pop(0)
+            # Append the aspect ratios to the history
+            ear_history.append(left_ear)
+            mar_history.append(mar)
 
-                # Check if the average aspect ratios are below the thresholds
-                if np.mean(ear_history) < EAR_THRESHOLD:
-                    # print("Microsleep detected at time: ", time.asctime(time.localtime(time.time())), "with EAR: ", np.mean(ear_history))
+            # Remove the oldest aspect ratios if the history is too long
+            if len(ear_history) > HISTORY_LENGTH:
+                ear_history.pop(0)
+            if len(mar_history) > HISTORY_LENGTH:
+                mar_history.pop(0)
+
+            # Check if the average aspect ratios are below the thresholds
+            if np.mean(ear_history) < EAR_THRESHOLD:
+                if microsleep_start_time is None:
+                    microsleep_start_time = time.time()
+                elif time.time() - microsleep_start_time >= MICROSLEEP_MIN_TIME:
+                    microsleep_start_time = None
+                    print("Microsleep detected at time: ", datetime.now().strftime("%H:%M:%S"), "with EAR: ", np.mean(ear_history))
                     cv2.putText(current_frame, "Microsleep detected!", (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-                if np.mean(mar_history) > MAR_THRESHOLD:
-                    # print("Yawning detected at time: ", time.asctime(time.localtime(time.time())), "with MAR: ", np.mean(mar_history))
+            else:
+                microsleep_start_time = None
+            if np.mean(mar_history) > MAR_THRESHOLD:
+                if yawn_start_time is None:
+                    yawn_start_time = time.time()
+                elif time.time() - yawn_start_time >= YAWN_MIN_TIME:
+                    yawn_start_time = None
+                    print("Yawning detected at time: ", datetime.now().strftime("%H:%M:%S"), "with MAR: ", np.mean(mar_history))
                     cv2.putText(current_frame, "Yawning detected!", (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            else:
+                yawn_start_time = None
 
-                # Display the aspect ratios on the image
-                cv2.putText(current_frame, "Left eye aspect ratio: {:.2f}".format(left_ear), 
-                            (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-                cv2.putText(current_frame, "Right eye aspect ratio: {:.2f}".format(right_ear), 
-                            (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-                cv2.putText(current_frame, "Mouth aspect ratio: {:.2f}".format(mar), 
-                            (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-                
-                # Display the calibration thresholds on the image
-                cv2.putText(current_frame, "EAR_THRESHOLD: {:.2f}".format(EAR_THRESHOLD),
-                            (width - 400, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-                cv2.putText(current_frame, "MAR_THRESHOLD: {:.2f}".format(MAR_THRESHOLD),
-                            (width - 400, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-                
-                draw_landmarks(current_frame, face_landmarks)
+            # Display the aspect ratios on the image
+            cv2.putText(current_frame, "Left eye aspect ratio: {:.2f}".format(left_ear), 
+                        (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            cv2.putText(current_frame, "Right eye aspect ratio: {:.2f}".format(right_ear), 
+                        (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            cv2.putText(current_frame, "Mouth aspect ratio: {:.2f}".format(mar), 
+                        (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            
+            # Display the calibration thresholds on the image
+            cv2.putText(current_frame, "EAR_THRESHOLD: {:.2f}".format(EAR_THRESHOLD),
+                        (width - 400, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            cv2.putText(current_frame, "MAR_THRESHOLD: {:.2f}".format(MAR_THRESHOLD),
+                        (width - 400, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            
+            draw_landmarks(current_frame, face_landmarks)
 
         cv2.imshow('face_landmarker', current_frame)
 
