@@ -38,7 +38,7 @@ ear_history = []
 mar_history = []
 
 # The maximum length of the aspect ratio history
-HISTORY_LENGTH = 30
+HISTORY_LENGTH = 10
 
 # Length of calibration
 NEUTRAL_FACE_TIME = 5
@@ -46,8 +46,8 @@ YAWN_TIME = 5
 EYE_CLOSE_TIME = 5
 
 # Minimum time for yawn and eye close detection in seconds
-YAWN_MIN_TIME = 4
-MICROSLEEP_MIN_TIME = 2
+YAWN_MIN_TIME = 3
+MICROSLEEP_MIN_TIME = 1
 
 # Calculate FPS
 FPS_AVG_FRAME_COUNT = 10
@@ -251,6 +251,9 @@ def run(model: str, num_faces: int,
     microsleep_start_time = None
     yawn_start_time = None
 
+    # Add a flag for eye closure
+    eyes_closed = False
+
     # Continuously capture images from the camera and run inference
     while cap.isOpened():
         success, image = cap.read()
@@ -296,23 +299,24 @@ def run(model: str, num_faces: int,
             if len(mar_history) > HISTORY_LENGTH:
                 mar_history.pop(0)
 
-            # Check if the average aspect ratios are below the thresholds
+            # Check if microsleep is detected
             if np.mean(ear_history) < EAR_THRESHOLD:
-                if microsleep_start_time is None:
+                if not eyes_closed and microsleep_start_time and time.time() - microsleep_start_time >= MICROSLEEP_MIN_TIME:
+                    eyes_closed = True
+                    print(f"Microsleep after {time.time() - microsleep_start_time} seconds: ", datetime.now().strftime("%H:%M:%S"), "EAR: ", np.mean(ear_history))
+                elif not eyes_closed and not microsleep_start_time:
                     microsleep_start_time = time.time()
-                elif time.time() - microsleep_start_time >= MICROSLEEP_MIN_TIME:
-                    microsleep_start_time = None
-                    print("Microsleep detected at time: ", datetime.now().strftime("%H:%M:%S"), "with EAR: ", np.mean(ear_history))
-                    cv2.putText(current_frame, "Microsleep detected!", (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
             else:
+                eyes_closed = False
                 microsleep_start_time = None
+
+            # Check if yawn is detected
             if np.mean(mar_history) > MAR_THRESHOLD:
                 if yawn_start_time is None:
                     yawn_start_time = time.time()
                 elif time.time() - yawn_start_time >= YAWN_MIN_TIME:
+                    print(f"Yawn after {time.time() - yawn_start_time} seconds: ", datetime.now().strftime("%H:%M:%S"), "MAR: ", np.mean(mar_history))
                     yawn_start_time = None
-                    print("Yawning detected at time: ", datetime.now().strftime("%H:%M:%S"), "with MAR: ", np.mean(mar_history))
-                    cv2.putText(current_frame, "Yawning detected!", (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
             else:
                 yawn_start_time = None
 
