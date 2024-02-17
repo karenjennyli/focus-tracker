@@ -264,8 +264,9 @@ def run(model: str, num_faces: int,
     microsleep_start_time = None
     yawn_start_time = None
 
-    # Add a flag for eye closure
+    # Add a flags for microsleep and yawning detection
     eyes_closed = False
+    yawning = False
 
     # Continuously capture images from the camera and run inference
     while cap.isOpened():
@@ -325,12 +326,13 @@ def run(model: str, num_faces: int,
 
             # Check if yawn is detected
             if np.mean(mar_history) > MAR_THRESHOLD:
-                if yawn_start_time is None:
-                    yawn_start_time = time.time()
-                elif time.time() - yawn_start_time >= YAWN_MIN_TIME:
+                if not yawning and yawn_start_time and time.time() - yawn_start_time >= YAWN_MIN_TIME:
+                    yawning = True
                     print(f"Yawn: ", datetime.now().strftime("%H:%M:%S"), "MAR: ", np.mean(mar_history))
-                    yawn_start_time = None
+                elif not yawning and not yawn_start_time:
+                    yawn_start_time = time.time()
             else:
+                yawning = False
                 yawn_start_time = None
 
             # Display the aspect ratios on the image
