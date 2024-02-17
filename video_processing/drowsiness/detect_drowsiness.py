@@ -41,9 +41,7 @@ mar_history = []
 HISTORY_LENGTH = 10
 
 # Length of calibration
-NEUTRAL_FACE_TIME = 5
-YAWN_TIME = 5
-EYE_CLOSE_TIME = 5
+CALIBRATION_TIME = 3
 
 # Minimum time for yawn and eye close detection in seconds
 YAWN_MIN_TIME = 3
@@ -170,14 +168,14 @@ def capture_face_landmarks(cap, detector, calibration_time, width, height, calib
     return aspect_ratio_values
 
 def calibrate(cap: cv2.VideoCapture, detector: vision.FaceLandmarker, width: int, height: int) -> tuple[float, float, float, float]:
-    neutral_face_message = f"Keep a neutral face with eyes open for {NEUTRAL_FACE_TIME} seconds. Press the space bar to start."
-    neutral_ear_values, neutral_mar_values = zip(*capture_face_landmarks(cap, detector, NEUTRAL_FACE_TIME, width, height, neutral_face_message))
+    neutral_face_message = f"Keep a neutral face with eyes open for {CALIBRATION_TIME} seconds. Press the space bar to start."
+    neutral_ear_values, neutral_mar_values = zip(*capture_face_landmarks(cap, detector, CALIBRATION_TIME, width, height, neutral_face_message))
 
-    yawn_message = f"Yawn for {YAWN_TIME} seconds. Press the space bar to start."
-    _, yawn_mar_values = zip(*capture_face_landmarks(cap, detector, YAWN_TIME, width, height, yawn_message))
+    yawn_message = f"Yawn for {CALIBRATION_TIME} seconds. Press the space bar to start."
+    _, yawn_mar_values = zip(*capture_face_landmarks(cap, detector, CALIBRATION_TIME, width, height, yawn_message))
 
-    eye_close_message = f"Close your eyes for {EYE_CLOSE_TIME} seconds. Press the space bar to start."
-    eye_close_ear_values, _ = zip(*capture_face_landmarks(cap, detector, EYE_CLOSE_TIME, width, height, eye_close_message))
+    eye_close_message = f"Close your eyes for {CALIBRATION_TIME} seconds. Press the space bar to start."
+    eye_close_ear_values, _ = zip(*capture_face_landmarks(cap, detector, CALIBRATION_TIME, width, height, eye_close_message))
 
     # Calculate the mean and standard deviation of the aspect ratios
     neutral_ear_mean, neutral_ear_std = np.mean(neutral_ear_values), np.std(neutral_ear_values)
@@ -247,6 +245,21 @@ def run(model: str, num_faces: int,
     # Calibrate the eye aspect ratio and mouth aspect ratio thresholds
     ear_mean, ear_std, mar_mean, mar_std = calibrate(cap, detector, width, height)
 
+    # Wait for the user to press the space bar to start the program
+    while True:
+        success, image = cap.read()
+        if not success:
+            sys.exit(
+                'ERROR: Unable to read from webcam. Please verify your webcam settings.'
+            )
+
+        image = cv2.flip(image, 1)
+        current_frame = image
+        cv2.putText(current_frame, "Press the space bar to start the program.", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        cv2.imshow('face_landmarker', image)
+        if cv2.waitKey(1) == 32:
+            break
+
     # Initialize start times for microsleep and yawning detection
     microsleep_start_time = None
     yawn_start_time = None
@@ -303,7 +316,7 @@ def run(model: str, num_faces: int,
             if np.mean(ear_history) < EAR_THRESHOLD:
                 if not eyes_closed and microsleep_start_time and time.time() - microsleep_start_time >= MICROSLEEP_MIN_TIME:
                     eyes_closed = True
-                    print(f"Microsleep after {time.time() - microsleep_start_time} seconds: ", datetime.now().strftime("%H:%M:%S"), "EAR: ", np.mean(ear_history))
+                    print(f"Microsleep: ", datetime.now().strftime("%H:%M:%S"), "EAR: ", np.mean(ear_history))
                 elif not eyes_closed and not microsleep_start_time:
                     microsleep_start_time = time.time()
             else:
@@ -315,7 +328,7 @@ def run(model: str, num_faces: int,
                 if yawn_start_time is None:
                     yawn_start_time = time.time()
                 elif time.time() - yawn_start_time >= YAWN_MIN_TIME:
-                    print(f"Yawn after {time.time() - yawn_start_time} seconds: ", datetime.now().strftime("%H:%M:%S"), "MAR: ", np.mean(mar_history))
+                    print(f"Yawn: ", datetime.now().strftime("%H:%M:%S"), "MAR: ", np.mean(mar_history))
                     yawn_start_time = None
             else:
                 yawn_start_time = None
