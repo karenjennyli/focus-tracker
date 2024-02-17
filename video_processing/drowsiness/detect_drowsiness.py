@@ -11,103 +11,21 @@ import numpy as np
 
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
-from mediapipe.framework.formats import landmark_pb2
 
-from utils import euclidean_distance, mouth_aspect_ratio, MOUTH_KEYPOINTS
+from utils import mouth_aspect_ratio, eye_aspect_ratio, draw_landmarks
 from yawn_detector import YawnDetector
+from microsleep_detector import MicrosleepDetector
 
-mp_face_mesh = mp.solutions.face_mesh
-mp_drawing = mp.solutions.drawing_utils
-mp_drawing_styles = mp.solutions.drawing_styles
-
+# Result of the face landmark detection
 DETECTION_RESULT = None
 
-# Keypoints from the face mesh model:
-# https://storage.googleapis.com/mediapipe-assets/documentation/mediapipe_face_landmark_fullsize.png
-
-# Order: left, upper left, upper right, right, lower right, lower left
-LEFT_EYE_KEYPOINTS = [33, 160, 158, 133, 153, 144]
-RIGHT_EYE_KEYPOINTS = [362, 384, 387, 263, 373, 380]
-
-# Thresholds for the eye aspect ratio and mouth aspect ratio
-EAR_THRESHOLD = None
-MAR_THRESHOLD = None
-
-# Aspect ratios from previous frames
-ear_history = []
-mar_history = []
-
-# The maximum length of the aspect ratio history
-HISTORY_LENGTH = 10
-
-# Length of calibration
+# Calibration time
 CALIBRATION_TIME = 3
-
-# Minimum time for yawn and eye close detection in seconds
-MICROSLEEP_MIN_TIME = 1
 
 # Calculate FPS
 FPS_AVG_FRAME_COUNT = 10
 COUNTER, FPS = 0, 0
 START_TIME = time.time()
-
-
-def eye_aspect_ratio(face_landmarks: landmark_pb2.NormalizedLandmarkList, keypoints: list[int]) -> float:
-    p = [face_landmarks[keypoints[i]] for i in range(len(keypoints))]
-    a = euclidean_distance(p[1], p[5])
-    b = euclidean_distance(p[2], p[4])
-    c = euclidean_distance(p[0], p[3])
-    return (a + b) / (2.0 * c)
-
-
-def draw_landmarks(current_frame: np.ndarray, face_landmarks: list[vision.FaceLandmarker]) -> None:
-    face_landmarks_proto = landmark_pb2.NormalizedLandmarkList()
-    face_landmarks_proto.landmark.extend([
-        landmark_pb2.NormalizedLandmark(x=landmark.x,
-                                        y=landmark.y,
-                                        z=landmark.z) for
-        landmark in
-        face_landmarks
-    ])
-
-    # Create a new landmark list for the left eye keypoints
-    left_eye_landmarks = landmark_pb2.NormalizedLandmarkList()
-    left_eye_landmarks.landmark.extend([face_landmarks_proto.landmark[i] for i in LEFT_EYE_KEYPOINTS])
-
-    # Draw the left eye keypoints
-    mp_drawing.draw_landmarks(
-        image=current_frame,
-        landmark_list=left_eye_landmarks,
-        connections=[],
-        landmark_drawing_spec=mp_drawing_styles.get_default_face_mesh_tesselation_style(),
-        connection_drawing_spec=None
-    )
-
-    # Create a new landmark list for the right eye keypoints
-    right_eye_landmarks = landmark_pb2.NormalizedLandmarkList()
-    right_eye_landmarks.landmark.extend([face_landmarks_proto.landmark[i] for i in RIGHT_EYE_KEYPOINTS])
-
-    # Draw the right eye keypoints
-    mp_drawing.draw_landmarks(
-        image=current_frame,
-        landmark_list=right_eye_landmarks,
-        connections=[],
-        landmark_drawing_spec=mp_drawing_styles.get_default_face_mesh_tesselation_style(),
-        connection_drawing_spec=None
-    )
-
-    # Create a new landmark list for the mouth keypoints
-    mouth_landmarks = landmark_pb2.NormalizedLandmarkList()
-    mouth_landmarks.landmark.extend([face_landmarks_proto.landmark[i] for i in MOUTH_KEYPOINTS])
-
-    # Draw the mouth keypoints
-    mp_drawing.draw_landmarks(
-        image=current_frame,
-        landmark_list=mouth_landmarks,
-        connections=[],
-        landmark_drawing_spec=mp_drawing_styles.get_default_face_mesh_tesselation_style(),
-        connection_drawing_spec=None
-    )
 
 
 def capture_face_landmarks(cap, detector, calibration_time, width, height, calibration_message):
@@ -138,10 +56,9 @@ def capture_face_landmarks(cap, detector, calibration_time, width, height, calib
                 start_time = time.time()
         else:
             if DETECTION_RESULT and DETECTION_RESULT.face_landmarks:
-                left_ear = eye_aspect_ratio(DETECTION_RESULT.face_landmarks[0], LEFT_EYE_KEYPOINTS)
-                right_ear = eye_aspect_ratio(DETECTION_RESULT.face_landmarks[0], RIGHT_EYE_KEYPOINTS)
+                ear = eye_aspect_ratio(DETECTION_RESULT.face_landmarks[0])
                 mar = mouth_aspect_ratio(DETECTION_RESULT.face_landmarks[0])
-                aspect_ratio_values.append(((left_ear + right_ear) / 2, mar))
+                aspect_ratio_values.append((ear, mar))
                 draw_landmarks(current_frame, DETECTION_RESULT.face_landmarks[0])
 
             cv2.putText(current_frame, 'Finished in: ' + str(calibration_time - int(time.time() - start_time)), (width // 2 - 100, height // 2 - 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
@@ -168,14 +85,13 @@ def calibrate(cap: cv2.VideoCapture, detector: vision.FaceLandmarker, width: int
     neutral_mar_mean, neutral_mar_std = np.mean(neutral_mar_values), np.std(neutral_mar_values)
 
     # Calculate the thresholds for the eye aspect ratio and mouth aspect ratio
-    global EAR_THRESHOLD, MAR_THRESHOLD
-    EAR_THRESHOLD = np.mean(eye_close_ear_values) + np.mean(eye_close_ear_values) * 0.1
-    EAR_THRESHOLD = (EAR_THRESHOLD - neutral_ear_mean) / neutral_ear_std
-    MAR_THRESHOLD = np.mean(yawn_mar_values) - np.mean(yawn_mar_values) * 0.1
-    MAR_THRESHOLD = (MAR_THRESHOLD - neutral_mar_mean) / neutral_mar_std
+    ear_threshold = np.mean(eye_close_ear_values) + np.mean(eye_close_ear_values) * 0.1
+    ear_threshold = (ear_threshold - neutral_ear_mean) / neutral_ear_std
+    mar_threshold = np.mean(yawn_mar_values) - np.mean(yawn_mar_values) * 0.1
+    mar_threshold = (mar_threshold - neutral_mar_mean) / neutral_mar_std
 
     # Return the mean and standard deviation of the aspect ratios
-    return neutral_ear_mean, neutral_ear_std, EAR_THRESHOLD, neutral_mar_mean, neutral_mar_std, MAR_THRESHOLD
+    return neutral_ear_mean, neutral_ear_std, ear_threshold, neutral_mar_mean, neutral_mar_std, mar_threshold
 
 
 def run(model: str, num_faces: int,
@@ -234,6 +150,9 @@ def run(model: str, num_faces: int,
     # Create a yawn detector
     yawn_detector = YawnDetector(min_time=3, mar_mean=mar_mean, mar_std=mar_std, threshold=mar_threshold, history_length=10)
 
+    # Create a microsleep detector
+    microsleep_detector = MicrosleepDetector(min_time=1, ear_mean=ear_mean, ear_std=ear_std, threshold=ear_threshold, history_length=10)
+
     # Wait for the user to press the space bar to start the program
     while True:
         success, image = cap.read()
@@ -249,12 +168,6 @@ def run(model: str, num_faces: int,
         if cv2.waitKey(1) == 32:
             break
 
-    # Initialize start times for microsleep and yawning detection
-    microsleep_start_time = None
-
-    # Add a flags for microsleep and yawning detection
-    eyes_closed = False
-
     # Continuously capture images from the camera and run inference
     while cap.isOpened():
         success, image = cap.read()
@@ -264,15 +177,12 @@ def run(model: str, num_faces: int,
             )
 
         image = cv2.flip(image, 1)
+        current_frame = image
 
-        # Convert the image from BGR to RGB as required by the TFLite model.
+        # Run the face landmark detection model
         rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_image)
-
-        # Run face landmarker using the model.
         detector.detect_async(mp_image, time.time_ns() // 1_000_000)
-
-        current_frame = image
         
         # Display the FPS on the image
         cv2.putText(current_frame, 'FPS: {:.2f}'.format(FPS), (10, height - 400), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
@@ -280,48 +190,24 @@ def run(model: str, num_faces: int,
         if DETECTION_RESULT and DETECTION_RESULT.face_landmarks:
             face_landmarks = DETECTION_RESULT.face_landmarks[0]
 
-            # Calculate the aspect ratios for the left and right eyes
-            left_ear = eye_aspect_ratio(face_landmarks, LEFT_EYE_KEYPOINTS)
-            right_ear = eye_aspect_ratio(face_landmarks, RIGHT_EYE_KEYPOINTS)
-
-            # Normalize the aspect ratios
-            left_ear = (left_ear - ear_mean) / ear_std
-            right_ear = (right_ear - ear_mean) / ear_std
-
-            # Append the aspect ratios to the history
-            ear_history.append(left_ear)
-
-            # Remove the oldest aspect ratios if the history is too long
-            if len(ear_history) > HISTORY_LENGTH:
-                ear_history.pop(0)
-
-            # Check if microsleep is detected
-            if np.mean(ear_history) < EAR_THRESHOLD:
-                if not eyes_closed and microsleep_start_time and time.time() - microsleep_start_time >= MICROSLEEP_MIN_TIME:
-                    eyes_closed = True
-                    print(f'Microsleep: ', datetime.now().strftime('%H:%M:%S'), 'EAR: ', np.mean(ear_history))
-                elif not eyes_closed and not microsleep_start_time:
-                    microsleep_start_time = time.time()
-            else:
-                eyes_closed = False
-                microsleep_start_time = None
-
             yawn_detected, mar = yawn_detector.detect_yawn(face_landmarks)
             if yawn_detected:
                 print(f'Yawn: ', datetime.now().strftime('%H:%M:%S'), 'MAR: ', mar)
 
+            microsleep_detected, ear = microsleep_detector.detect_microsleep(face_landmarks)
+            if microsleep_detected:
+                print(f'Microsleep: ', datetime.now().strftime('%H:%M:%S'), 'EAR: ', ear)
+
             # Display the aspect ratios on the image
-            cv2.putText(current_frame, 'Left eye aspect ratio: {:.2f}'.format(left_ear), 
+            cv2.putText(current_frame, 'Left eye aspect ratio: {:.2f}'.format(ear), 
                         (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-            cv2.putText(current_frame, 'Right eye aspect ratio: {:.2f}'.format(right_ear), 
-                        (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
             cv2.putText(current_frame, 'Mouth aspect ratio: {:.2f}'.format(mar), 
-                        (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+                        (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
             
             # Display the calibration thresholds on the image
-            cv2.putText(current_frame, 'EAR_THRESHOLD: {:.2f}'.format(EAR_THRESHOLD),
+            cv2.putText(current_frame, 'ear_threshold: {:.2f}'.format(ear_threshold),
                         (width - 400, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-            cv2.putText(current_frame, 'MAR_THRESHOLD: {:.2f}'.format(MAR_THRESHOLD),
+            cv2.putText(current_frame, 'mar_threshold: {:.2f}'.format(mar_threshold),
                         (width - 400, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
             
             draw_landmarks(current_frame, face_landmarks)
