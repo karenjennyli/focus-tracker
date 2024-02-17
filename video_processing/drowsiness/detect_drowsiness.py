@@ -13,6 +13,9 @@ from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 from mediapipe.framework.formats import landmark_pb2
 
+from utils import euclidean_distance, mouth_aspect_ratio, MOUTH_KEYPOINTS
+from yawn_detector import YawnDetector
+
 mp_face_mesh = mp.solutions.face_mesh
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
@@ -25,9 +28,6 @@ DETECTION_RESULT = None
 # Order: left, upper left, upper right, right, lower right, lower left
 LEFT_EYE_KEYPOINTS = [33, 160, 158, 133, 153, 144]
 RIGHT_EYE_KEYPOINTS = [362, 384, 387, 263, 373, 380]
-
-# Order: left, upper left, top, upper right, right, lower right, bottom, lower left
-MOUTH_KEYPOINTS = [61, 39, 0, 269, 291, 405, 17, 181]
 
 # Thresholds for the eye aspect ratio and mouth aspect ratio
 EAR_THRESHOLD = None
@@ -44,7 +44,6 @@ HISTORY_LENGTH = 10
 CALIBRATION_TIME = 3
 
 # Minimum time for yawn and eye close detection in seconds
-YAWN_MIN_TIME = 3
 MICROSLEEP_MIN_TIME = 1
 
 # Calculate FPS
@@ -53,25 +52,12 @@ COUNTER, FPS = 0, 0
 START_TIME = time.time()
 
 
-def euclidean_distance(p1: landmark_pb2.NormalizedLandmark, p2: landmark_pb2.NormalizedLandmark) -> float:
-    return ((p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2) ** 0.5
-
-
 def eye_aspect_ratio(face_landmarks: landmark_pb2.NormalizedLandmarkList, keypoints: list[int]) -> float:
     p = [face_landmarks[keypoints[i]] for i in range(len(keypoints))]
     a = euclidean_distance(p[1], p[5])
     b = euclidean_distance(p[2], p[4])
     c = euclidean_distance(p[0], p[3])
     return (a + b) / (2.0 * c)
-
-
-def mouth_aspect_ratio(face_landmarks: landmark_pb2.NormalizedLandmarkList, keypoints: list[int]) -> float:
-    p = [face_landmarks[keypoints[i]] for i in range(len(keypoints))]
-    a = euclidean_distance(p[1], p[7])
-    b = euclidean_distance(p[2], p[6])
-    c = euclidean_distance(p[3], p[5])
-    d = euclidean_distance(p[0], p[4])
-    return (a + b + c) / (2.0 * d)
 
 
 def draw_landmarks(current_frame: np.ndarray, face_landmarks: list[vision.FaceLandmarker]) -> None:
@@ -154,7 +140,7 @@ def capture_face_landmarks(cap, detector, calibration_time, width, height, calib
             if DETECTION_RESULT and DETECTION_RESULT.face_landmarks:
                 left_ear = eye_aspect_ratio(DETECTION_RESULT.face_landmarks[0], LEFT_EYE_KEYPOINTS)
                 right_ear = eye_aspect_ratio(DETECTION_RESULT.face_landmarks[0], RIGHT_EYE_KEYPOINTS)
-                mar = mouth_aspect_ratio(DETECTION_RESULT.face_landmarks[0], MOUTH_KEYPOINTS)
+                mar = mouth_aspect_ratio(DETECTION_RESULT.face_landmarks[0])
                 aspect_ratio_values.append(((left_ear + right_ear) / 2, mar))
                 draw_landmarks(current_frame, DETECTION_RESULT.face_landmarks[0])
 
@@ -189,7 +175,7 @@ def calibrate(cap: cv2.VideoCapture, detector: vision.FaceLandmarker, width: int
     MAR_THRESHOLD = (MAR_THRESHOLD - neutral_mar_mean) / neutral_mar_std
 
     # Return the mean and standard deviation of the aspect ratios
-    return neutral_ear_mean, neutral_ear_std, neutral_mar_mean, neutral_mar_std
+    return neutral_ear_mean, neutral_ear_std, EAR_THRESHOLD, neutral_mar_mean, neutral_mar_std, MAR_THRESHOLD
 
 
 def run(model: str, num_faces: int,
@@ -243,7 +229,10 @@ def run(model: str, num_faces: int,
     detector = vision.FaceLandmarker.create_from_options(options)
 
     # Calibrate the eye aspect ratio and mouth aspect ratio thresholds
-    ear_mean, ear_std, mar_mean, mar_std = calibrate(cap, detector, width, height)
+    ear_mean, ear_std, ear_threshold, mar_mean, mar_std, mar_threshold = calibrate(cap, detector, width, height)
+
+    # Create a yawn detector
+    yawn_detector = YawnDetector(min_time=3, mar_mean=mar_mean, mar_std=mar_std, threshold=mar_threshold, history_length=10)
 
     # Wait for the user to press the space bar to start the program
     while True:
@@ -262,11 +251,9 @@ def run(model: str, num_faces: int,
 
     # Initialize start times for microsleep and yawning detection
     microsleep_start_time = None
-    yawn_start_time = None
 
     # Add a flags for microsleep and yawning detection
     eyes_closed = False
-    yawning = False
 
     # Continuously capture images from the camera and run inference
     while cap.isOpened():
@@ -296,22 +283,17 @@ def run(model: str, num_faces: int,
             # Calculate the aspect ratios for the left and right eyes
             left_ear = eye_aspect_ratio(face_landmarks, LEFT_EYE_KEYPOINTS)
             right_ear = eye_aspect_ratio(face_landmarks, RIGHT_EYE_KEYPOINTS)
-            mar = mouth_aspect_ratio(face_landmarks, MOUTH_KEYPOINTS)
 
             # Normalize the aspect ratios
             left_ear = (left_ear - ear_mean) / ear_std
             right_ear = (right_ear - ear_mean) / ear_std
-            mar = (mar - mar_mean) / mar_std
 
             # Append the aspect ratios to the history
             ear_history.append(left_ear)
-            mar_history.append(mar)
 
             # Remove the oldest aspect ratios if the history is too long
             if len(ear_history) > HISTORY_LENGTH:
                 ear_history.pop(0)
-            if len(mar_history) > HISTORY_LENGTH:
-                mar_history.pop(0)
 
             # Check if microsleep is detected
             if np.mean(ear_history) < EAR_THRESHOLD:
@@ -324,16 +306,9 @@ def run(model: str, num_faces: int,
                 eyes_closed = False
                 microsleep_start_time = None
 
-            # Check if yawn is detected
-            if np.mean(mar_history) > MAR_THRESHOLD:
-                if not yawning and yawn_start_time and time.time() - yawn_start_time >= YAWN_MIN_TIME:
-                    yawning = True
-                    print(f'Yawn: ', datetime.now().strftime('%H:%M:%S'), 'MAR: ', np.mean(mar_history))
-                elif not yawning and not yawn_start_time:
-                    yawn_start_time = time.time()
-            else:
-                yawning = False
-                yawn_start_time = None
+            yawn_detected, mar = yawn_detector.detect_yawn(face_landmarks)
+            if yawn_detected:
+                print(f'Yawn: ', datetime.now().strftime('%H:%M:%S'), 'MAR: ', mar)
 
             # Display the aspect ratios on the image
             cv2.putText(current_frame, 'Left eye aspect ratio: {:.2f}'.format(left_ear), 
