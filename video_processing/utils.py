@@ -10,6 +10,17 @@ mp_drawing_styles = mp.solutions.drawing_styles
 MOUTH_KEYPOINTS = [61, 39, 0, 269, 291, 405, 17, 181]
 LEFT_EYE_KEYPOINTS = [33, 160, 158, 133, 153, 144]
 RIGHT_EYE_KEYPOINTS = [362, 384, 387, 263, 373, 380]
+HEAD_POSE_KEYPOINTS = [1, 9, 57, 130, 287, 359]
+ALL_KEYPOINTS = [MOUTH_KEYPOINTS, LEFT_EYE_KEYPOINTS, RIGHT_EYE_KEYPOINTS, HEAD_POSE_KEYPOINTS]
+
+HEAD_POSE_3D_POINTS = np.array([
+    [285, 528, 200],
+    [285, 371, 152],
+    [197, 574, 128],
+    [173, 425, 108],
+    [360, 574, 128],
+    [391, 425, 108]
+], dtype=np.float64)
 
 
 def euclidean_distance(p1: landmark_pb2.NormalizedLandmark, p2: landmark_pb2.NormalizedLandmark) -> float:
@@ -54,41 +65,14 @@ def draw_landmarks(current_frame: np.ndarray, face_landmarks: list[vision.FaceLa
         face_landmarks
     ])
 
-    # Create a new landmark list for the left eye keypoints
-    left_eye_landmarks = landmark_pb2.NormalizedLandmarkList()
-    left_eye_landmarks.landmark.extend([face_landmarks_proto.landmark[i] for i in LEFT_EYE_KEYPOINTS])
-
-    # Draw the left eye keypoints
-    mp_drawing.draw_landmarks(
-        image=current_frame,
-        landmark_list=left_eye_landmarks,
-        connections=[],
-        landmark_drawing_spec=mp_drawing_styles.get_default_face_mesh_tesselation_style(),
-        connection_drawing_spec=None
-    )
-
-    # Create a new landmark list for the right eye keypoints
-    right_eye_landmarks = landmark_pb2.NormalizedLandmarkList()
-    right_eye_landmarks.landmark.extend([face_landmarks_proto.landmark[i] for i in RIGHT_EYE_KEYPOINTS])
-
-    # Draw the right eye keypoints
-    mp_drawing.draw_landmarks(
-        image=current_frame,
-        landmark_list=right_eye_landmarks,
-        connections=[],
-        landmark_drawing_spec=mp_drawing_styles.get_default_face_mesh_tesselation_style(),
-        connection_drawing_spec=None
-    )
-
-    # Create a new landmark list for the mouth keypoints
-    mouth_landmarks = landmark_pb2.NormalizedLandmarkList()
-    mouth_landmarks.landmark.extend([face_landmarks_proto.landmark[i] for i in MOUTH_KEYPOINTS])
-
-    # Draw the mouth keypoints
-    mp_drawing.draw_landmarks(
-        image=current_frame,
-        landmark_list=mouth_landmarks,
-        connections=[],
-        landmark_drawing_spec=mp_drawing_styles.get_default_face_mesh_tesselation_style(),
-        connection_drawing_spec=None
-    )
+    # Draw the face keypoints
+    for keypoints in ALL_KEYPOINTS:
+        landmark_list = landmark_pb2.NormalizedLandmarkList()
+        landmark_list.landmark.extend([face_landmarks_proto.landmark[i] for i in keypoints])
+        mp_drawing.draw_landmarks(
+            image=current_frame,
+            landmark_list=landmark_list,
+            connections=[],
+            landmark_drawing_spec=mp_drawing_styles.get_default_face_mesh_tesselation_style(),
+            connection_drawing_spec=None
+        )

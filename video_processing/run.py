@@ -15,6 +15,7 @@ from mediapipe.tasks.python import vision
 from utils import mouth_aspect_ratio, eye_aspect_ratio, draw_landmarks
 from yawn_detector import YawnDetector
 from microsleep_detector import MicrosleepDetector
+from head_pose_estimator import HeadPoseEstimator
 
 # Result of the face landmark detection
 DETECTION_RESULT = None
@@ -146,12 +147,12 @@ def run(model: str, num_faces: int,
 
     # Calibrate the eye aspect ratio and mouth aspect ratio thresholds
     ear_mean, ear_std, ear_threshold, mar_mean, mar_std, mar_threshold = calibrate(cap, detector, width, height)
+    print(f'EAR threshold: {ear_threshold}, MAR threshold: {mar_threshold}')
 
-    # Create a yawn detector
+    # Initialize detectors
     yawn_detector = YawnDetector(min_time=3, mar_mean=mar_mean, mar_std=mar_std, threshold=mar_threshold, history_length=10)
-
-    # Create a microsleep detector
     microsleep_detector = MicrosleepDetector(min_time=1, ear_mean=ear_mean, ear_std=ear_std, threshold=ear_threshold, history_length=10)
+    head_pose_estimator = HeadPoseEstimator(width, height)
 
     # Wait for the user to press the space bar to start the program
     while True:
@@ -198,17 +199,18 @@ def run(model: str, num_faces: int,
             if microsleep_detected:
                 print(f'Microsleep: ', datetime.now().strftime('%H:%M:%S'), 'EAR: ', ear)
 
+            pitch, yaw, roll = head_pose_estimator.estimate_head_pose(face_landmarks)
+
             # Display the aspect ratios on the image
-            cv2.putText(current_frame, 'Left eye aspect ratio: {:.2f}'.format(ear), 
+            cv2.putText(current_frame, 'Eye aspect ratio: {:.2f}'.format(ear), 
                         (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
             cv2.putText(current_frame, 'Mouth aspect ratio: {:.2f}'.format(mar), 
                         (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
             
-            # Display the calibration thresholds on the image
-            cv2.putText(current_frame, 'ear_threshold: {:.2f}'.format(ear_threshold),
-                        (width - 400, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-            cv2.putText(current_frame, 'mar_threshold: {:.2f}'.format(mar_threshold),
-                        (width - 400, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            # Draw the head pose angles at the top left corner of the image
+            cv2.putText(current_frame, f'Pitch: {int(pitch)}', (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            cv2.putText(current_frame, f'Yaw: {int(yaw)}', (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            cv2.putText(current_frame, f'Roll: {int(roll)}', (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
             
             draw_landmarks(current_frame, face_landmarks)
 
@@ -264,12 +266,12 @@ def main():
         '--frameWidth',
         help='Width of frame to capture from camera.',
         required=False,
-        default=1280)
+        default=1920)
     parser.add_argument(
         '--frameHeight',
         help='Height of frame to capture from camera.',
         required=False,
-        default=960)
+        default=1080)
     args = parser.parse_args()
 
     run(args.model, int(args.numFaces), args.minFaceDetectionConfidence,
