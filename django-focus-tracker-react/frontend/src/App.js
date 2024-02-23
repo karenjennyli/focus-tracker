@@ -28,9 +28,10 @@ function Header() {
 function MainContent() {
   return (
     <div className="main-content">
+      <h1>Focus Tracker App</h1>
       <div className="intro">
-        <h1>Focus Tracker App</h1>
-        <p>This App enables users to measure their focus and associated distractions during work sessions to help them identify actionable steps to improve their productivity.</p>
+        <p>This App enables users to measure their focus and associated distractions during <br></br>work sessions to help them identify actionable steps to improve their productivity.</p>
+        <br></br>
         <button className="get-started">Get Started</button>
       </div>
     </div>
