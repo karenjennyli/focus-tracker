@@ -1,23 +1,38 @@
-import logo from './logo.svg';
 import './App.css';
+import React from 'react';
 
 function App() {
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <Header />
+      <MainContent />
+    </div>
+  );
+}
+
+function Header() {
+  return (
+    <header className="App-header">
+      <div className="logo">Logo</div>
+      <nav>
+        <ul>
+          <li>Home</li>
+          <li>Features</li>
+          <li>About</li>
+        </ul>
+      </nav>
+    </header>
+  );
+}
+
+function MainContent() {
+  return (
+    <div className="main-content">
+      <div className="intro">
+        <h1>Focus Tracker App</h1>
+        <p>This App enables users to measure their focus and associated distractions during work sessions to help them identify actionable steps to improve their productivity.</p>
+        <button className="get-started">Get Started</button>
+      </div>
     </div>
   );
 }
