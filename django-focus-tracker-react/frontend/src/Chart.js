@@ -37,7 +37,7 @@ const data = [
   },
 ];
 
-export default function App() {
+export default function Chart() {
   return (
     <BarChart
       width={500}

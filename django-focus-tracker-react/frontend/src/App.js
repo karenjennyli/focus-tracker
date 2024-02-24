@@ -1,6 +1,8 @@
 import './App.css';
 import React from 'react';
 import Chart from "./Chart";
+import PChart from "./PieChart";
+import LChart from "./LineChart";
 
 function App() {
   return (
@@ -35,8 +37,16 @@ function MainContent() {
         <br></br>
         <button className="get-started">Get Started</button>
       </div>
-      <div className="chart">
-        <Chart />
+      <div className="charts-container">
+        <div className="chart">
+          <Chart />
+        </div>
+        <div className="pchart">
+          <PChart />
+        </div>
+        <div className="lchart">
+          <LChart />
+        </div>
       </div>
     </div>
   );
