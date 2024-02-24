@@ -1,5 +1,6 @@
 import './App.css';
 import React from 'react';
+import Chart from "./Chart";
 
 function App() {
   return (
@@ -33,6 +34,9 @@ function MainContent() {
         <p>This App enables users to measure their focus and associated distractions during <br></br>work sessions to help them identify actionable steps to improve their productivity.</p>
         <br></br>
         <button className="get-started">Get Started</button>
+      </div>
+      <div className="chart">
+        <Chart />
       </div>
     </div>
   );
