@@ -119,6 +119,8 @@ class Record():
         # cortex has closed session. Wait some seconds before exporting record
         time.sleep(3)
 
+        print(self.record_export_folder)
+
         #export record
         self.export_record(self.record_export_folder, self.record_export_data_types,
                            self.record_export_format, [self.record_id], self.record_export_version)
@@ -159,7 +161,7 @@ def main():
     r = Record(your_app_client_id, your_app_client_secret)
     print("1")
 
-    r.license = "79b05942-cf84-47a8-b76a-63878f8b9e97"
+    # r.license = "79b05942-cf84-47a8-b76a-63878f8b9e97"
     # input params for create_record. Please see on_create_session_done before running script
     r.record_title = 'test' # required param and can not be empty
     r.record_description = '' # optional param
@@ -172,7 +174,7 @@ def main():
     r.record_export_version = 'V2'
 
 
-    record_duration_s = 10 # duration for recording in this example. It is not input param of create_record
+    record_duration_s = 2 # duration for recording in this example. It is not input param of create_record
     print("2")
     r.start(record_duration_s)
     print("3")
