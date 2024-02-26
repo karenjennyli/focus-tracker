@@ -3,12 +3,14 @@ import React from 'react';
 import Chart from "./Chart";
 import PChart from "./PieChart";
 import LChart from "./LineChart";
+import WebcamStream from './WebcamStream';
 
 function App() {
   return (
     <div className="App">
       <Header />
       <MainContent />
+      <WebcamStream />
     </div>
   );
 }
