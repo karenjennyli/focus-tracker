@@ -1,2 +1,4 @@
 eeg_headset/data_collection/labels/
 eeg_headset/data_collection/recordings/
+phone_detector/my_model/datasets
+**/.DS_Store
