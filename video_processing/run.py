@@ -17,6 +17,8 @@ from yawn_detector import YawnDetector
 from microsleep_detector import MicrosleepDetector
 from gaze_detector import GazeDetector
 
+import requests
+
 # Result of the face landmark detection
 DETECTION_RESULT = None
 
@@ -198,6 +200,15 @@ def run(model: str, num_faces: int,
             if drowsiness_enabled:
                 yawn_detected, mar = yawn_detector.detect_yawn(face_landmarks)
                 if yawn_detected:
+                    data = {
+                        'user_id': 'user123',
+                        'detection_type': 'yawn',
+                        'timestamp': datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ'),
+                        'aspect_ratio': mar,  # Mouth Aspect Ratio for yawn detection
+                    }
+                    response = requests.post('http://127.0.0.1:8000/api/detections/', json=data)
+                    if response.status_code == 201:
+                        print("Yawn data successfully sent to Django")
                     print(f'Yawn: ', datetime.now().strftime('%H:%M:%S'), 'MAR: ', mar)
 
                 microsleep_detected, ear = microsleep_detector.detect_microsleep(face_landmarks)
