@@ -15,7 +15,7 @@ from mediapipe.tasks.python import vision
 from utils import mouth_aspect_ratio, eye_aspect_ratio, draw_landmarks
 from yawn_detector import YawnDetector
 from microsleep_detector import MicrosleepDetector
-from head_pose_estimator import HeadPoseEstimator
+from gaze_detector import GazeDetector
 
 # Result of the face landmark detection
 DETECTION_RESULT = None
@@ -152,7 +152,7 @@ def run(model: str, num_faces: int,
     # Initialize detectors
     yawn_detector = YawnDetector(min_time=3, mar_mean=mar_mean, mar_std=mar_std, threshold=mar_threshold, history_length=10)
     microsleep_detector = MicrosleepDetector(min_time=1, ear_mean=ear_mean, ear_std=ear_std, threshold=ear_threshold, history_length=10)
-    head_pose_estimator = HeadPoseEstimator(width, height)
+    gaze_detector = GazeDetector(width=width, height=height, min_time=1, history_length=10)
 
     # Wait for the user to press the space bar to start the program
     while True:
@@ -199,7 +199,9 @@ def run(model: str, num_faces: int,
             if microsleep_detected:
                 print(f'Microsleep: ', datetime.now().strftime('%H:%M:%S'), 'EAR: ', ear)
 
-            pitch, yaw, roll = head_pose_estimator.estimate_head_pose(face_landmarks)
+            gaze, pitch, yaw, roll = gaze_detector.detect_gaze(face_landmarks)
+            if gaze == 'left' or gaze == 'right':
+                print(f'Gaze: ', datetime.now().strftime('%H:%M:%S'), gaze)
 
             # Display the aspect ratios on the image
             cv2.putText(current_frame, 'Eye aspect ratio: {:.2f}'.format(ear), 
