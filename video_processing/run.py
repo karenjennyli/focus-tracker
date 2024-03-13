@@ -98,7 +98,8 @@ def calibrate(cap: cv2.VideoCapture, detector: vision.FaceLandmarker, width: int
 def run(model: str, num_faces: int,
         min_face_detection_confidence: float,
         min_face_presence_confidence: float, min_tracking_confidence: float,
-        camera_id: int, width: int, height: int) -> None:
+        camera_id: int, width: int, height: int,
+        drowsiness_enabled: bool, gaze_enabled: bool) -> None:
     '''Continuously run inference on images acquired from the camera.
 
   Args:
@@ -146,13 +147,16 @@ def run(model: str, num_faces: int,
     detector = vision.FaceLandmarker.create_from_options(options)
 
     # Calibrate the eye aspect ratio and mouth aspect ratio thresholds
-    ear_mean, ear_std, ear_threshold, mar_mean, mar_std, mar_threshold = calibrate(cap, detector, width, height)
-    print(f'EAR threshold: {ear_threshold}, MAR threshold: {mar_threshold}')
+    if drowsiness_enabled:
+        ear_mean, ear_std, ear_threshold, mar_mean, mar_std, mar_threshold = calibrate(cap, detector, width, height)
+        print(f'EAR threshold: {ear_threshold}, MAR threshold: {mar_threshold}')
 
     # Initialize detectors
-    yawn_detector = YawnDetector(min_time=3, mar_mean=mar_mean, mar_std=mar_std, threshold=mar_threshold, history_length=10)
-    microsleep_detector = MicrosleepDetector(min_time=1, ear_mean=ear_mean, ear_std=ear_std, threshold=ear_threshold, history_length=10)
-    gaze_detector = GazeDetector(width=width, height=height, min_time=1, history_length=10)
+    if drowsiness_enabled:
+        yawn_detector = YawnDetector(min_time=3, mar_mean=mar_mean, mar_std=mar_std, threshold=mar_threshold, history_length=10)
+        microsleep_detector = MicrosleepDetector(min_time=1, ear_mean=ear_mean, ear_std=ear_std, threshold=ear_threshold, history_length=10)
+    if gaze_enabled:
+        gaze_detector = GazeDetector(width=width, height=height, min_time=1, history_length=10)
 
     # Wait for the user to press the space bar to start the program
     while True:
@@ -191,28 +195,30 @@ def run(model: str, num_faces: int,
         if DETECTION_RESULT and DETECTION_RESULT.face_landmarks:
             face_landmarks = DETECTION_RESULT.face_landmarks[0]
 
-            yawn_detected, mar = yawn_detector.detect_yawn(face_landmarks)
-            if yawn_detected:
-                print(f'Yawn: ', datetime.now().strftime('%H:%M:%S'), 'MAR: ', mar)
+            if drowsiness_enabled:
+                yawn_detected, mar = yawn_detector.detect_yawn(face_landmarks)
+                if yawn_detected:
+                    print(f'Yawn: ', datetime.now().strftime('%H:%M:%S'), 'MAR: ', mar)
 
-            microsleep_detected, ear = microsleep_detector.detect_microsleep(face_landmarks)
-            if microsleep_detected:
-                print(f'Microsleep: ', datetime.now().strftime('%H:%M:%S'), 'EAR: ', ear)
+                microsleep_detected, ear = microsleep_detector.detect_microsleep(face_landmarks)
+                if microsleep_detected:
+                    print(f'Microsleep: ', datetime.now().strftime('%H:%M:%S'), 'EAR: ', ear)
 
-            gaze, pitch, yaw, roll = gaze_detector.detect_gaze(face_landmarks)
-            if gaze == 'left' or gaze == 'right':
-                print(f'Gaze: ', datetime.now().strftime('%H:%M:%S'), gaze)
+            if gaze_enabled:
+                gaze, pitch, yaw, roll = gaze_detector.detect_gaze(face_landmarks)
+                if gaze == 'left' or gaze == 'right':
+                    print(f'Gaze: ', datetime.now().strftime('%H:%M:%S'), gaze)
 
             # Display the aspect ratios on the image
-            cv2.putText(current_frame, 'Eye aspect ratio: {:.2f}'.format(ear), 
-                        (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-            cv2.putText(current_frame, 'Mouth aspect ratio: {:.2f}'.format(mar), 
-                        (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            if drowsiness_enabled:
+                cv2.putText(current_frame, 'Eye aspect ratio: {:.2f}'.format(ear), 
+                            (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+                cv2.putText(current_frame, 'Mouth aspect ratio: {:.2f}'.format(mar), 
+                            (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
             
             # Draw the head pose angles at the top left corner of the image
-            cv2.putText(current_frame, f'Pitch: {int(pitch)}', (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-            cv2.putText(current_frame, f'Yaw: {int(yaw)}', (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-            cv2.putText(current_frame, f'Roll: {int(roll)}', (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            if gaze_enabled:
+                cv2.putText(current_frame, f'Yaw: {int(yaw)}', (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
             
             draw_landmarks(current_frame, face_landmarks)
 
@@ -274,11 +280,22 @@ def main():
         help='Height of frame to capture from camera.',
         required=False,
         default=1080)
+    parser.add_argument(
+        '--drowsinessEnabled',
+        help='Enable drowsiness detection.',
+        required=False,
+        default=True)
+    parser.add_argument(
+        '--gazeEnabled',
+        help='Enable gaze detection.',
+        required=False,
+        default=True)
     args = parser.parse_args()
 
     run(args.model, int(args.numFaces), args.minFaceDetectionConfidence,
         args.minFacePresenceConfidence, args.minTrackingConfidence,
-        int(args.cameraId), args.frameWidth, args.frameHeight)
+        int(args.cameraId), args.frameWidth, args.frameHeight,
+        args.drowsinessEnabled, args.gazeEnabled)
 
 
 if __name__ == '__main__':
