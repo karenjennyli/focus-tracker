@@ -5,17 +5,7 @@ import math
 import numpy as np
 import cv2
 
-HEAD_POSE_KEYPOINTS = [1, 9, 57, 130, 287, 359]
-HEAD_POSE_3D_POINTS = np.array([
-    [285, 528, 200],
-    [285, 371, 152],
-    [197, 574, 128],
-    [173, 425, 108],
-    [360, 574, 128],
-    [391, 425, 108]
-], dtype=np.float64)
-GAZE_LEFT_THRESHOLD = -30
-GAZE_RIGHT_THRESHOLD = 50
+from utils import HEAD_POSE_KEYPOINTS, HEAD_POSE_3D_POINTS, GAZE_LEFT_THRESHOLD, GAZE_RIGHT_THRESHOLD
 
 class GazeDetector:
 

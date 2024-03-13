@@ -7,12 +7,14 @@ mp_face_mesh = mp.solutions.face_mesh
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
 
+# drowsiness detection constants
+CALIBRATION_TIME = 3
 MOUTH_KEYPOINTS = [61, 39, 0, 269, 291, 405, 17, 181]
 LEFT_EYE_KEYPOINTS = [33, 160, 158, 133, 153, 144]
 RIGHT_EYE_KEYPOINTS = [362, 384, 387, 263, 373, 380]
-HEAD_POSE_KEYPOINTS = [1, 9, 57, 130, 287, 359]
-ALL_KEYPOINTS = [MOUTH_KEYPOINTS, LEFT_EYE_KEYPOINTS, RIGHT_EYE_KEYPOINTS, HEAD_POSE_KEYPOINTS]
 
+# gaze detection constants
+HEAD_POSE_KEYPOINTS = [1, 9, 57, 130, 287, 359]
 HEAD_POSE_3D_POINTS = np.array([
     [285, 528, 200],
     [285, 371, 152],
@@ -21,6 +23,11 @@ HEAD_POSE_3D_POINTS = np.array([
     [360, 574, 128],
     [391, 425, 108]
 ], dtype=np.float64)
+GAZE_LEFT_THRESHOLD = -30
+GAZE_RIGHT_THRESHOLD = 50
+
+# all face landmark keypoints
+ALL_KEYPOINTS = [MOUTH_KEYPOINTS, LEFT_EYE_KEYPOINTS, RIGHT_EYE_KEYPOINTS, HEAD_POSE_KEYPOINTS]
 
 
 def euclidean_distance(p1: landmark_pb2.NormalizedLandmark, p2: landmark_pb2.NormalizedLandmark) -> float:

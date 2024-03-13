@@ -13,15 +13,13 @@ from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 
 from utils import mouth_aspect_ratio, eye_aspect_ratio, draw_landmarks
+from utils import CALIBRATION_TIME
 from yawn_detector import YawnDetector
 from microsleep_detector import MicrosleepDetector
 from gaze_detector import GazeDetector
 
 # Result of the face landmark detection
 DETECTION_RESULT = None
-
-# Calibration time
-CALIBRATION_TIME = 3
 
 # Calculate FPS
 FPS_AVG_FRAME_COUNT = 10
