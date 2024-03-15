@@ -201,6 +201,7 @@ def run(model: str, num_faces: int,
                 yawn_detected, mar = yawn_detector.detect_yawn(face_landmarks)
                 if yawn_detected:
                     data = {
+                        'session_id': '123',
                         'user_id': 'user123',
                         'detection_type': 'yawn',
                         'timestamp': datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ'),
