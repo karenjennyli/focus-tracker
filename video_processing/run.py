@@ -212,7 +212,9 @@ def run(model: str, num_faces: int,
 
             if phone_enabled:
                 phone_detected, annotated_image = phone_detector.detect_phone(current_frame)
-                current_frame = annotated_image
+                if phone_detected:
+                    print(f'Phone: ', datetime.now().strftime('%H:%M:%S'))
+                    current_frame = annotated_image
 
             # Display the aspect ratios on the image
             if drowsiness_enabled:
@@ -286,27 +288,30 @@ def main():
         required=False,
         default=1080)
     parser.add_argument(
-        '--drowsinessEnabled',
+        '--disableDrowsiness',
         help='Enable drowsiness detection.',
+        action='store_true',
         required=False,
-        default=True)
+        default=False)
     parser.add_argument(
-        '--gazeEnabled',
+        '--disableGaze',
         help='Enable gaze detection.',
+        action='store_true',
         required=False,
-        default=True)
+        default=False)
     parser.add_argument(
-        '--phoneEnabled',
+        '--disablePhone',
         help='Enable phone detection.',
+        action='store_true',
         required=False,
-        default=True
+        default=False
     )
     args = parser.parse_args()
 
     run(args.model, int(args.numFaces), args.minFaceDetectionConfidence,
         args.minFacePresenceConfidence, args.minTrackingConfidence,
         int(args.cameraId), args.frameWidth, args.frameHeight,
-        args.drowsinessEnabled, args.gazeEnabled, args.phoneEnabled)
+        not args.disableDrowsiness, not args.disableGaze, not args.disablePhone)
 
 
 if __name__ == '__main__':
