@@ -16,3 +16,9 @@ class DetectionEventView(APIView):
             print("Saved DetectionEvent:", serializer.validated_data)
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
+
+class YawningDataView(APIView):
+    def get(self, request, *args, **kwargs):
+        yawning_data = DetectionEvent.objects.filter(detection_type='yawn').order_by('-timestamp')
+        serializer = DetectionEventSerializer(yawning_data, many=True)
+        return Response(serializer.data)
