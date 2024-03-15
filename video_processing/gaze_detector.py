@@ -5,11 +5,11 @@ import math
 import numpy as np
 import cv2
 
-from utils import HEAD_POSE_KEYPOINTS, HEAD_POSE_3D_POINTS, GAZE_LEFT_THRESHOLD, GAZE_RIGHT_THRESHOLD
+from utils import HEAD_POSE_KEYPOINTS, HEAD_POSE_3D_POINTS, GAZE_LEFT_THRESHOLD, GAZE_RIGHT_THRESHOLD, GAZE_HISTORY_LENGTH
 
 class GazeDetector:
 
-    def __init__(self, width: int, height: int, min_time: int, history_length: int):
+    def __init__(self, width: int, height: int, min_time: int, history_length: int = GAZE_HISTORY_LENGTH):
         self.width = width
         self.height = height
         self.min_time = min_time

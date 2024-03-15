@@ -14,7 +14,6 @@ cap = cv2.VideoCapture(0)
 # Initialize the annotators
 bounding_box_annotator = sv.BoundingBoxAnnotator()
 percentage_bar_annotator = sv.PercentageBarAnnotator()
-label_annotator = sv.LabelAnnotator()
 
 # Initialize the time and frame count for FPS calculation
 start_time = time.time()

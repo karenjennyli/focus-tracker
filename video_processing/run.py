@@ -13,10 +13,11 @@ from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 
 from utils import mouth_aspect_ratio, eye_aspect_ratio, draw_landmarks
-from utils import CALIBRATION_TIME
+from utils import CALIBRATION_TIME, YAWN_MIN_TIME, MICROSLEEP_MIN_TIME, GAZE_MIN_TIME, PHONE_MIN_TIME
 from yawn_detector import YawnDetector
 from microsleep_detector import MicrosleepDetector
 from gaze_detector import GazeDetector
+from phone_detector import PhoneDetector
 
 # Result of the face landmark detection
 DETECTION_RESULT = None
@@ -84,7 +85,7 @@ def calibrate(cap: cv2.VideoCapture, detector: vision.FaceLandmarker, width: int
     neutral_mar_mean, neutral_mar_std = np.mean(neutral_mar_values), np.std(neutral_mar_values)
 
     # Calculate the thresholds for the eye aspect ratio and mouth aspect ratio
-    ear_threshold = np.mean(eye_close_ear_values) + np.mean(eye_close_ear_values) * 0.1
+    ear_threshold = np.mean(eye_close_ear_values) + np.mean(eye_close_ear_values) * 0.25
     ear_threshold = (ear_threshold - neutral_ear_mean) / neutral_ear_std
     mar_threshold = np.mean(yawn_mar_values) - np.mean(yawn_mar_values) * 0.1
     mar_threshold = (mar_threshold - neutral_mar_mean) / neutral_mar_std
@@ -97,7 +98,7 @@ def run(model: str, num_faces: int,
         min_face_detection_confidence: float,
         min_face_presence_confidence: float, min_tracking_confidence: float,
         camera_id: int, width: int, height: int,
-        drowsiness_enabled: bool, gaze_enabled: bool) -> None:
+        drowsiness_enabled: bool, gaze_enabled: bool, phone_enabled: bool) -> None:
     '''Continuously run inference on images acquired from the camera.
 
   Args:
@@ -151,10 +152,12 @@ def run(model: str, num_faces: int,
 
     # Initialize detectors
     if drowsiness_enabled:
-        yawn_detector = YawnDetector(min_time=3, mar_mean=mar_mean, mar_std=mar_std, threshold=mar_threshold, history_length=10)
-        microsleep_detector = MicrosleepDetector(min_time=1, ear_mean=ear_mean, ear_std=ear_std, threshold=ear_threshold, history_length=10)
+        yawn_detector = YawnDetector(min_time=YAWN_MIN_TIME, mar_mean=mar_mean, mar_std=mar_std, threshold=mar_threshold)
+        microsleep_detector = MicrosleepDetector(min_time=MICROSLEEP_MIN_TIME, ear_mean=ear_mean, ear_std=ear_std, threshold=ear_threshold)
     if gaze_enabled:
-        gaze_detector = GazeDetector(width=width, height=height, min_time=1, history_length=10)
+        gaze_detector = GazeDetector(width=width, height=height, min_time=GAZE_MIN_TIME)
+    if phone_enabled:
+        phone_detector = PhoneDetector(min_time=PHONE_MIN_TIME)
 
     # Wait for the user to press the space bar to start the program
     while True:
@@ -206,6 +209,10 @@ def run(model: str, num_faces: int,
                 gaze, pitch, yaw, roll = gaze_detector.detect_gaze(face_landmarks)
                 if gaze == 'left' or gaze == 'right':
                     print(f'Gaze: ', datetime.now().strftime('%H:%M:%S'), gaze)
+
+            if phone_enabled:
+                phone_detected, annotated_image = phone_detector.detect_phone(current_frame)
+                current_frame = annotated_image
 
             # Display the aspect ratios on the image
             if drowsiness_enabled:
@@ -288,12 +295,18 @@ def main():
         help='Enable gaze detection.',
         required=False,
         default=True)
+    parser.add_argument(
+        '--phoneEnabled',
+        help='Enable phone detection.',
+        required=False,
+        default=True
+    )
     args = parser.parse_args()
 
     run(args.model, int(args.numFaces), args.minFaceDetectionConfidence,
         args.minFacePresenceConfidence, args.minTrackingConfidence,
         int(args.cameraId), args.frameWidth, args.frameHeight,
-        args.drowsinessEnabled, args.gazeEnabled)
+        args.drowsinessEnabled, args.gazeEnabled, args.phoneEnabled)
 
 
 if __name__ == '__main__':
