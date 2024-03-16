@@ -1,6 +1,10 @@
 eeg_headset/data_collection/labels/
 eeg_headset/data_collection/recordings/
 eeg_headset/data_collection/labeled_data/
+eeg_headset/data_collection/filtered_data/
+eeg_headset/data_collection/test/
+eeg_headset/data_collection/train/
+eeg_headset/data_collection/valid/
 phone_detector/my_model/datasets
 **/.DS_Store
 **/__pycache__
