@@ -1,8 +1,8 @@
 import pandas as pd
 
 # Load the CSV files
-raw_data_path = 'recordings/ishan_take_1_raw_data.csv'
-labels_path = 'labels/ishan take 1 focus_data_2024-02-26 11:02:18.766.csv'
+raw_data_path = 'recordings/justin_take_5_raw_data.csv'
+labels_path = 'labels/justin take 5 focus_data_2024-03-11 11:15:50.136.csv'
 
 raw_data_df = pd.read_csv(raw_data_path)
 labels_df = pd.read_csv(labels_path)
@@ -30,7 +30,7 @@ raw_data_df.loc[raw_data_df['Timestamp'] >= last_label_timestamp, 'label'] = Non
 
 # Save the modified dataframe back to a CSV
 modified_raw_data_path = 'labeled_data/' + 'labeled_' + raw_data_path.split('/')[-1]
-columns_to_export = ['Timestamp', 'EEG.AF3', 'EEG.Pz', 'EEG.AF4', 'CQ.AF3', 'CQ.Pz', 'CQ.AF4','CQ.Overall', 'EQ.OVERALL', 'EQ.AF3', 'EQ.Pz', 'EQ.AF4', 'PM.Attention.IsActive', 'POW.AF3.Theta', 'POW.AF3.Alpha', 'POW.AF3.BetaL', 'POW.AF3.BetaH', 'POW.AF3.Gamma', 'POW.Pz.Theta', 'POW.Pz.Alpha', 'POW.Pz.BetaL', 'POW.Pz.BetaH', 'POW.Pz.Gamma', 'POW.AF4.Theta', 'POW.AF4.Alpha', 'POW.AF4.BetaL', 'POW.AF4.BetaH', 'POW.AF4.Gamma', 'label']
+columns_to_export = ['Timestamp', 'EEG.AF3', 'EEG.Pz', 'EEG.AF4', 'CQ.AF3', 'CQ.Pz', 'CQ.AF4','CQ.Overall', 'EQ.OVERALL', 'EQ.AF3', 'EQ.Pz', 'EQ.AF4', 'PM.Attention.IsActive', 'PM.Attention.Scaled', 'PM.Attention.Raw', 'PM.Attention.Min', 'PM.Attention.Max', 'PM.Engagement.IsActive', 'PM.Engagement.Scaled', 'PM.Engagement.Raw', 'PM.Engagement.Min', 'PM.Engagement.Max', 'PM.Excitement.IsActive', 'PM.Excitement.Scaled', 'PM.Excitement.Raw', 'PM.Excitement.Min', 'PM.Excitement.Max', 'PM.LongTermExcitement', 'PM.Stress.IsActive', 'PM.Stress.Scaled', 'PM.Stress.Raw', 'PM.Stress.Min', 'PM.Stress.Max', 'PM.Relaxation.IsActive', 'PM.Relaxation.Scaled', 'PM.Relaxation.Raw', 'PM.Relaxation.Min', 'PM.Relaxation.Max', 'PM.Interest.IsActive', 'PM.Interest.Scaled', 'PM.Interest.Raw', 'PM.Interest.Min', 'PM.Interest.Max', 'PM.Focus.IsActive', 'PM.Focus.Scaled', 'PM.Focus.Raw', 'PM.Focus.Min', 'PM.Focus.Max', 'POW.AF3.Theta', 'POW.AF3.Alpha', 'POW.AF3.BetaL', 'POW.AF3.BetaH', 'POW.AF3.Gamma', 'POW.Pz.Theta', 'POW.Pz.Alpha', 'POW.Pz.BetaL', 'POW.Pz.BetaH', 'POW.Pz.Gamma', 'POW.AF4.Theta', 'POW.AF4.Alpha', 'POW.AF4.BetaL', 'POW.AF4.BetaH', 'POW.AF4.Gamma', 'label']
 raw_data_df.to_csv(modified_raw_data_path, columns=columns_to_export, index=False)
 
 print(f'Modified raw data saved to {modified_raw_data_path}')

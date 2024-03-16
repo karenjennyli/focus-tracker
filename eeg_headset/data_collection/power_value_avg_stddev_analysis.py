@@ -1,7 +1,7 @@
 import pandas as pd
 
 # File path to the CSV
-csv_file_path = 'train/Pz_train_labeled_ishan_take_1_raw_data.csv'
+csv_file_path = 'labeled_data/labeled_ishan_take_1_raw_data.csv'
 
 # Load the CSV file into a pandas DataFrame
 df = pd.read_csv(csv_file_path)
@@ -18,14 +18,19 @@ df = pd.read_csv(csv_file_path)
 # ]
 
 # Pz power values for all frequency bands
-columns = [
-    'POW.Pz.Theta', 'POW.Pz.Alpha', 'POW.Pz.BetaL', 'POW.Pz.BetaH', 'POW.Pz.Gamma'
-]
+# columns = [
+#     'POW.Pz.Theta', 'POW.Pz.Alpha', 'POW.Pz.BetaL', 'POW.Pz.BetaH', 'POW.Pz.Gamma'
+# ]
 
 # Pz power values for focus related frequency bands
 # columns = [
 #     'POW.Pz.Theta', 'POW.Pz.Alpha'
 # ]
+
+# PM scaled values
+columns = [
+    'PM.Attention.Scaled', 'PM.Engagement.Scaled', 'PM.Excitement.Scaled', 'PM.LongTermExcitement', 'PM.Stress.Scaled', 'PM.Relaxation.Scaled', 'PM.Interest.Scaled', 'PM.Focus.Scaled'
+]
 
 # Calculate the average values for each label (0.0, -1.0, and 1.0)
 average_values = df.groupby('label')[columns].mean()

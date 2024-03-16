@@ -1,0 +1,104 @@
+import pandas as pd
+import torch
+from torch import nn
+from torch.utils.data import Dataset, DataLoader
+from torch.optim import Adam
+from sklearn.preprocessing import StandardScaler
+
+# Neural Network definition
+class NeuralNetwork(nn.Module):
+    def __init__(self, input_size, num_classes):
+        super(NeuralNetwork, self).__init__()
+        self.layer1 = nn.Linear(input_size, 128)
+        self.layer2 = nn.Linear(128, 64)
+        self.layer3 = nn.Linear(64, 32)
+        self.layer4 = nn.Linear(32, num_classes)
+        
+    def forward(self, x):
+        x = torch.relu(self.layer1(x))
+        x = torch.relu(self.layer2(x))
+        x = torch.relu(self.layer3(x))
+        x = self.layer4(x)  # Output layer, no activation here
+        return x
+
+# Function to load dataset
+def load_dataset(csv_file, input_columns, label_column):
+    df = pd.read_csv(csv_file)
+    inputs = df[input_columns].values
+    
+    # Map labels from -1.0, 0.0, 1.0 to 0, 1, 2
+    label_mapping = {-1.0: 0, 0.0: 1, 1.0: 2}
+    labels = df[label_column].map(label_mapping).values
+    
+    scaler = StandardScaler()
+    inputs = scaler.fit_transform(inputs)
+    
+    inputs = torch.tensor(inputs, dtype=torch.float32)
+    labels = torch.tensor(labels, dtype=torch.long)  # Ensure labels are long type for CrossEntropyLoss
+    
+    return inputs, labels
+
+
+# Dataset class
+class EEGDataset(Dataset):
+    def __init__(self, inputs, labels):
+        self.inputs = inputs
+        self.labels = labels
+        
+    def __len__(self):
+        return len(self.inputs)
+    
+    def __getitem__(self, idx):
+        return self.inputs[idx], self.labels[idx]
+
+# Load datasets
+input_columns = ['EEG.Pz', 'POW.Pz.Theta', 'POW.Pz.Alpha', 'POW.Pz.BetaL', 'POW.Pz.BetaH', 'POW.Pz.Gamma']
+label_column = 'label'
+train_inputs, train_labels = load_dataset('../data_collection/train/Pz_combined_train_data.csv', input_columns, label_column)
+val_inputs, val_labels = load_dataset('../data_collection/valid/Pz_combined_valid_data.csv', input_columns, label_column)
+
+# Create dataloaders
+train_dataset = EEGDataset(train_inputs, train_labels)
+val_dataset = EEGDataset(val_inputs, val_labels)
+train_dataloader = DataLoader(train_dataset, batch_size=10, shuffle=True)
+val_dataloader = DataLoader(val_dataset, batch_size=10, shuffle=False)
+
+# Initialize the Neural Network, Loss Function, and Optimizer
+model = NeuralNetwork(input_size=6, num_classes=3)
+loss_fn = nn.CrossEntropyLoss()
+optimizer = Adam(model.parameters(), lr=0.001)
+
+# Training and Validation
+epochs = 100
+best_val_loss = float('inf')
+
+for epoch in range(epochs):
+    model.train()
+    train_loss = 0.0
+    for inputs, labels in train_dataloader:
+        optimizer.zero_grad()
+        outputs = model(inputs)
+        loss = loss_fn(outputs, labels)
+        loss.backward()
+        optimizer.step()
+        train_loss += loss.item()
+    
+    avg_train_loss = train_loss / len(train_dataloader)
+    print(f'Epoch {epoch+1}, Training Loss: {avg_train_loss:.4f}')
+    
+    model.eval()
+    val_loss = 0.0
+    with torch.no_grad():
+        for inputs, labels in val_dataloader:
+            outputs = model(inputs)
+            loss = loss_fn(outputs, labels)
+            val_loss += loss.item()
+    
+    avg_val_loss = val_loss / len(val_dataloader)
+    print(f'Epoch {epoch+1}, Validation Loss: {avg_val_loss:.4f}')
+    
+    if avg_val_loss < best_val_loss:
+        best_val_loss = avg_val_loss
+        torch.save(model.state_dict(), 'best_model_checkpoint.pth')
+        print('Best model saved!')
+

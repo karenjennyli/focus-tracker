@@ -1,12 +1,15 @@
 import pandas as pd
 
 # Load the CSV files
-labeled_data_path = 'labeled_data/labeled_ishan_take_1_raw_data.csv'
+labeled_data_path = 'labeled_data/labeled_justin_take_5_raw_data.csv'
 
 labeled_df = pd.read_csv(labeled_data_path)
 
 # Remove data entries without a label
 labeled_df.dropna(subset=['label'], inplace=True)
+
+# Remove data entries without frequency band power values
+labeled_df.dropna(subset=['POW.AF3.Theta'], inplace=True)
 
 # Find indices where both EQ.AF3 and EQ.AF4 have the value 4
 # eq_indices = labeled_df[(labeled_df['EQ.AF3'] == 4.0) & (labeled_df['EQ.AF4'] == 4.0)].index
