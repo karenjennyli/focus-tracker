@@ -77,6 +77,17 @@ function YawningData() {
     const [yawningData, setYawningData] = useState([]);
     const [sessionId, setSessionId] = useState(null); // Add state to track the current session ID
 
+    useEffect(() => {
+        // Fetch the current session_id from the backend
+        fetch('http://127.0.0.1:8000/api/current_session')
+            .then(response => response.json())
+            .then(data => {
+                setSessionId(data.session_id); // Update the sessionId state
+                console.log(data);
+            });
+    }, []); // Empty dependency array means this runs once on component mount
+
+
     // useEffect(() => {
     //     // Example way to generate a new session ID - in a real application, this might come from your backend
     //     const newSessionId = `session_${new Date().getTime()}`;
@@ -84,15 +95,16 @@ function YawningData() {
     //     setYawningData([]);
     // }, []); // This effect runs once on component mount to simulate starting a new session
 
-     // Method to manually start a new session for demonstration
-     const startNewSession = () => {
-        const newSessionId = `session_${new Date().getTime()}`; // Generate a new session ID
-        setSessionId(newSessionId); // Update sessionId state
-        setYawningData([]); // Clear previous session's data
-    };
+    //  // Method to manually start a new session for demonstration
+    //  const startNewSession = () => {
+    //     const newSessionId = `session_${new Date().getTime()}`; // Generate a new session ID
+    //     setSessionId(newSessionId); // Update sessionId state
+    //     setYawningData([]); // Clear previous session's data
+    // };
 
     useEffect(() => {
         if (!sessionId) return; // Don't fetch data if session ID hasn't been set yet
+        console.log(sessionId)
 
         const fetchYawningData = () => {
             fetch(`http://127.0.0.1:8000/api/yawning-data/?session_id=${sessionId}`) // Assuming your API can filter by session ID
@@ -111,7 +123,7 @@ function YawningData() {
 
     return (
         <div>
-            <button onClick={startNewSession}>Start New Session</button> {/* Button to start a new session */}
+            {/* <button onClick={startNewSession}>Start New Session</button> Button to start a new session */}
             <h2>Yawning Detection Data</h2>
             {yawningData.length > 0 ? (
                 yawningData.map((data, index) => (

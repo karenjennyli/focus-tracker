@@ -18,6 +18,7 @@ from microsleep_detector import MicrosleepDetector
 from gaze_detector import GazeDetector
 
 import requests
+import uuid
 
 # Result of the face landmark detection
 DETECTION_RESULT = None
@@ -29,6 +30,8 @@ CALIBRATION_TIME = 3
 FPS_AVG_FRAME_COUNT = 10
 COUNTER, FPS = 0, 0
 START_TIME = time.time()
+
+session_id = str(uuid.uuid4())
 
 
 def capture_face_landmarks(cap, detector, calibration_time, width, height, calibration_message):
@@ -196,12 +199,18 @@ def run(model: str, num_faces: int,
 
         if DETECTION_RESULT and DETECTION_RESULT.face_landmarks:
             face_landmarks = DETECTION_RESULT.face_landmarks[0]
+            current_session_data = {
+                'session_id': session_id,
+            }
+            resp = requests.post('http://127.0.0.1:8000/api/current_session', json=current_session_data)
+            # if resp.status_code == 201:
+            #         print("Current_session data successfully sent to Django")
 
             if drowsiness_enabled:
                 yawn_detected, mar = yawn_detector.detect_yawn(face_landmarks)
                 if yawn_detected:
                     data = {
-                        'session_id': '123',
+                        'session_id': session_id,
                         'user_id': 'user123',
                         'detection_type': 'yawn',
                         'timestamp': datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ'),

@@ -1,6 +1,10 @@
 from django.db import models
 from django.utils import timezone
 
+class Session(models.Model):
+    session_id = models.CharField(max_length=255, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
 class DetectionEvent(models.Model):
     session_id = models.CharField(max_length=255, null=True)
     user_id = models.CharField(max_length=255)
