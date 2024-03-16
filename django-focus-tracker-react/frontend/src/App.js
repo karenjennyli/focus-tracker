@@ -7,17 +7,6 @@ import LChart from "./LineChart";
 // import WebcamStream from './WebcamStream';
 import YawningData from './YawningInfo';
 
-// function App() {
-//   return (
-//     <div className="App">
-//       <Header />
-//       <MainContent />
-//       <WebcamStream />
-//     </div>
-//   );
-// }
-
-
 function App() {
   return (
     <Router>
