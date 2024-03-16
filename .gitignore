@@ -3,3 +3,4 @@ eeg_headset/data_collection/recordings/
 eeg_headset/data_collection/labeled_data/
 phone_detector/my_model/datasets
 **/.DS_Store
+**/__pycache__

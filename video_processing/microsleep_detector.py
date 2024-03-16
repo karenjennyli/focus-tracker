@@ -4,10 +4,11 @@ import numpy as np
 from mediapipe.framework.formats import landmark_pb2
 
 from utils import eye_aspect_ratio
+from utils import DROWSINESS_HISTORY_LENGTH
 
 class MicrosleepDetector:
 
-    def __init__(self, min_time: int, ear_mean: float, ear_std: float, threshold: float, history_length: int):
+    def __init__(self, min_time: int, ear_mean: float, ear_std: float, threshold: float, history_length: int = DROWSINESS_HISTORY_LENGTH):
         self.min_time = min_time
         self.ear_mean = ear_mean
         self.ear_std = ear_std

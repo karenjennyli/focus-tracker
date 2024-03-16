@@ -58,7 +58,7 @@ while True:
     end = datetime.datetime.now()
     # show the time it took to process 1 frame
     total = (end - start).total_seconds()
-    print(f"Time to process 1 frame: {total * 1000:.0f} milliseconds")
+    # print(f"Time to process 1 frame: {total * 1000:.0f} milliseconds")
 
     # calculate the frame per second and draw it on the frame
     fps = f"FPS: {1 / total:.2f}"
