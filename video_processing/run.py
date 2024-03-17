@@ -28,7 +28,7 @@ COUNTER, FPS = 0, 0
 START_TIME = time.time()
 
 
-def capture_face_landmarks(cap, detector, calibration_time, width, height, calibration_message):
+def capture_face_landmarks(cap, face_landmarker, calibration_time, width, height, calibration_message):
     start_time = None
     aspect_ratio_values = []
 
@@ -40,7 +40,7 @@ def capture_face_landmarks(cap, detector, calibration_time, width, height, calib
         image = cv2.flip(image, 1)
         rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_image)
-        detector.detect_async(mp_image, time.time_ns() // 1_000_000)
+        face_landmarker.detect_async(mp_image, time.time_ns() // 1_000_000)
         current_frame = image
 
         # Display the FPS on the image
@@ -70,15 +70,15 @@ def capture_face_landmarks(cap, detector, calibration_time, width, height, calib
 
     return aspect_ratio_values
 
-def calibrate(cap: cv2.VideoCapture, detector: vision.FaceLandmarker, width: int, height: int) -> tuple[float, float, float, float]:
+def calibrate(cap: cv2.VideoCapture, face_landmarker: vision.FaceLandmarker, width: int, height: int) -> tuple[float, float, float, float]:
     neutral_face_message = f'Keep a neutral face with eyes open for {CALIBRATION_TIME} seconds. Press the space bar to start.'
-    neutral_ear_values, neutral_mar_values = zip(*capture_face_landmarks(cap, detector, CALIBRATION_TIME, width, height, neutral_face_message))
+    neutral_ear_values, neutral_mar_values = zip(*capture_face_landmarks(cap, face_landmarker, CALIBRATION_TIME, width, height, neutral_face_message))
 
     yawn_message = f'Yawn for {CALIBRATION_TIME} seconds. Press the space bar to start.'
-    _, yawn_mar_values = zip(*capture_face_landmarks(cap, detector, CALIBRATION_TIME, width, height, yawn_message))
+    _, yawn_mar_values = zip(*capture_face_landmarks(cap, face_landmarker, CALIBRATION_TIME, width, height, yawn_message))
 
     eye_close_message = f'Close your eyes for {CALIBRATION_TIME} seconds. Press the space bar to start.'
-    eye_close_ear_values, _ = zip(*capture_face_landmarks(cap, detector, CALIBRATION_TIME, width, height, eye_close_message))
+    eye_close_ear_values, _ = zip(*capture_face_landmarks(cap, face_landmarker, CALIBRATION_TIME, width, height, eye_close_message))
 
     # Calculate the mean and standard deviation of the aspect ratios
     neutral_ear_mean, neutral_ear_std = np.mean(neutral_ear_values), np.std(neutral_ear_values)
@@ -143,11 +143,11 @@ def run(model: str, num_faces: int,
         min_tracking_confidence=min_tracking_confidence,
         output_face_blendshapes=True,
         result_callback=save_result)
-    detector = vision.FaceLandmarker.create_from_options(options)
+    face_landmarker = vision.FaceLandmarker.create_from_options(options)
 
     # Calibrate the eye aspect ratio and mouth aspect ratio thresholds
     if drowsiness_enabled:
-        ear_mean, ear_std, ear_threshold, mar_mean, mar_std, mar_threshold = calibrate(cap, detector, width, height)
+        ear_mean, ear_std, ear_threshold, mar_mean, mar_std, mar_threshold = calibrate(cap, face_landmarker, width, height)
         print(f'EAR threshold: {ear_threshold}, MAR threshold: {mar_threshold}')
 
     # Initialize detectors
@@ -188,7 +188,7 @@ def run(model: str, num_faces: int,
         # Run the face landmark detection model
         rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_image)
-        detector.detect_async(mp_image, time.time_ns() // 1_000_000)
+        face_landmarker.detect_async(mp_image, time.time_ns() // 1_000_000)
         
         # Display the FPS on the image
         cv2.putText(current_frame, 'FPS: {:.2f}'.format(FPS), (10, height - 400), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
@@ -235,7 +235,7 @@ def run(model: str, num_faces: int,
         if cv2.waitKey(1) == 27:
             break
 
-    detector.close()
+    face_landmarker.close()
     cap.release()
     cv2.destroyAllWindows()
 
