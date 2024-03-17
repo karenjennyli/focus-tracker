@@ -22,6 +22,23 @@ from microsleep_detector import MicrosleepDetector
 from gaze_detector import GazeDetector
 from phone_detector import PhoneDetector
 
+import requests
+import uuid
+import pytz
+
+# Result of the face landmark detection
+DETECTION_RESULT = None
+
+# Calibration time
+CALIBRATION_TIME = 3
+
+# Calculate FPS
+FPS_AVG_FRAME_COUNT = 10
+COUNTER, FPS = 0, 0
+START_TIME = time.time()
+
+session_id = str(uuid.uuid4())
+
 
 def capture_face_landmarks(cap, face_landmarker, calibration_time, width, height, calibration_message):
     start_time = None
@@ -200,11 +217,30 @@ def run(face_model: str, num_faces: int,
 
         if FACE_DETECTION_RESULT and FACE_DETECTION_RESULT.face_landmarks:
             face_landmarks = FACE_DETECTION_RESULT.face_landmarks[0]
+            current_session_data = {
+                'session_id': session_id,
+            }
+            resp = requests.post('http://127.0.0.1:8000/api/current_session', json=current_session_data)
+            # if resp.status_code == 201:
+            #         print("Current_session data successfully sent to Django")
 
             if drowsiness_enabled:
                 yawn_detected, mar = yawn_detector.detect_yawn(face_landmarks)
                 if yawn_detected:
-                    print(f'Yawn: ', datetime.now().strftime('%H:%M:%S'), 'MAR: ', mar)
+                    now_utc = datetime.now(pytz.utc)
+                    now_eastern = now_utc.astimezone(pytz.timezone('America/New_York'))
+
+                    data = {
+                        'session_id': session_id,
+                        'user_id': 'user123',
+                        'detection_type': 'yawn',
+                        'timestamp': now_eastern.strftime('%Y-%m-%dT%H:%M:%S'),
+                        'aspect_ratio': mar,  # Mouth Aspect Ratio for yawn detection
+                    }
+                    response = requests.post('http://127.0.0.1:8000/api/detections/', json=data)
+                    if response.status_code == 201:
+                        print("Yawn data successfully sent to Django")
+                    print(f'Yawn: ', now_eastern.strftime('%Y-%m-%dT%H:%M:%S'), 'MAR: ', mar)
 
                 microsleep_detected, ear = microsleep_detector.detect_microsleep(face_landmarks)
                 if microsleep_detected:
