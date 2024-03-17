@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import './YawningData.css'; // Assuming your styles are in YawningData.css
 
 function YawningData() {
     const [yawningData, setYawningData] = useState([]);
@@ -33,18 +34,49 @@ function YawningData() {
         return () => clearInterval(intervalId); // Cleanup interval on unmount
     }, [sessionId]); // Rerun this effect if sessionId changes
 
+    // Helper function to format timestamp
+    const parseAndFormatTime = (timestamp) => {
+    // Extract the time part (HH:MM:SS) from the timestamp
+    const timePart = timestamp.split('T')[1].split('Z')[0];
+    let [hours, minutes] = timePart.split(':');
+
+    // Convert hours to number 
+    hours = parseInt(hours, 10);
+
+    // Determine AM or PM
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+
+    // Convert to 12-hour format
+    hours = hours % 12;
+    hours = hours ? hours : 12; // the hour '0' should be '12'
+
+    // Return formatted time string
+    return `${hours}:${minutes} ${ampm}`;
+};
+
     return (
         <div>
-            <h2>Yawning Detection Data</h2>
+            <h1>Current Session</h1>
+            <h2>Real-Time Updates</h2>
             {yawningData.length > 0 ? (
-                yawningData.map((data, index) => (
-                    <div key={index}>
-                        <p>User ID: {data.user_id}</p>
-                        <p>Event Type: {data.detection_type}</p>
-                        <p>Timestamp: {data.timestamp}</p>
-                        <p>Aspect Ratio: {data.aspect_ratio}</p>
-                    </div>
-                ))
+                <table className="yawning-table">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Distraction Type</th>
+                            <th>Aspect Ratio</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {yawningData.slice(0, 6).map((data, index) => (
+                            <tr key={index}>
+                                <td>{parseAndFormatTime(data.timestamp)}</td>
+                                <td>{data.detection_type}</td>
+                                <td>{data.aspect_ratio.toFixed(2)}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
             ) : (
                 <p>No yawning data available for session {sessionId}.</p>
             )}
