@@ -11,24 +11,16 @@ import numpy as np
 
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
-from mediapipe.framework.formats import landmark_pb2
 
-mp_hands = mp.solutions.hands
-mp_drawing = mp.solutions.drawing_utils
-mp_drawing_styles = mp.solutions.drawing_styles
-
-from utils import mouth_aspect_ratio, eye_aspect_ratio, draw_face_landmarks
+from utils import mouth_aspect_ratio, eye_aspect_ratio, draw_face_landmarks, draw_hand_landmarks
 from utils import CALIBRATION_TIME, YAWN_MIN_TIME, MICROSLEEP_MIN_TIME, GAZE_MIN_TIME, PHONE_MIN_TIME
 from utils import FPS_AVG_FRAME_COUNT, COUNTER, FPS, START_TIME
-from utils import FACE_DETECTION_RESULT
+from utils import FACE_DETECTION_RESULT, HAND_DETECTION_RESULT
 
 from yawn_detector import YawnDetector
 from microsleep_detector import MicrosleepDetector
 from gaze_detector import GazeDetector
 from phone_detector import PhoneDetector
-
-# Result of the hand landmark detection
-HAND_DETECTION_RESULT = None
 
 
 def capture_face_landmarks(cap, face_landmarker, calibration_time, width, height, calibration_message):
@@ -54,7 +46,7 @@ def capture_face_landmarks(cap, face_landmarker, calibration_time, width, height
 
         if start_time is None:
             cv2.putText(current_frame, calibration_message, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-            cv2.imshow('face_landmarker', current_frame)
+            cv2.imshow('video_processing', current_frame)
             if cv2.waitKey(1) == 32:
                 start_time = time.time()
         else:
@@ -65,7 +57,7 @@ def capture_face_landmarks(cap, face_landmarker, calibration_time, width, height
                 draw_face_landmarks(current_frame, FACE_DETECTION_RESULT.face_landmarks[0])
 
             cv2.putText(current_frame, 'Finished in: ' + str(calibration_time - int(time.time() - start_time)), (width // 2 - 100, height // 2 - 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-            cv2.imshow('face_landmarker', current_frame)
+            cv2.imshow('video_processing', current_frame)
             cv2.waitKey(1)
 
             if time.time() - start_time >= calibration_time:
@@ -104,7 +96,7 @@ def run(face_model: str, num_faces: int,
         min_hand_detection_confidence: float,
         min_hand_presence_confidence: float,
         camera_id: int, width: int, height: int,
-        drowsiness_enabled: bool, gaze_enabled: bool, phone_enabled: bool) -> None:
+        drowsiness_enabled: bool, gaze_enabled: bool, phone_enabled: bool, hand_enabled: bool) -> None:
 
     # Start capturing video input from the camera
     cap = cv2.VideoCapture(camera_id)
@@ -178,7 +170,7 @@ def run(face_model: str, num_faces: int,
         image = cv2.flip(image, 1)
         current_frame = image
         cv2.putText(current_frame, 'Press the space bar to start the program.', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-        cv2.imshow('face_landmarker', image)
+        cv2.imshow('video_processing', image)
         if cv2.waitKey(1) == 32:
             break
 
@@ -200,7 +192,8 @@ def run(face_model: str, num_faces: int,
         face_landmarker.detect_async(mp_image, time.time_ns() // 1_000_000)
 
         # Run the hand landmark detection model
-        hand_landmarker.detect_async(mp_image, time.time_ns() // 1_000_000)
+        if hand_enabled:
+            hand_landmarker.detect_async(mp_image, time.time_ns() // 1_000_000)
         
         # Display the FPS on the image
         cv2.putText(current_frame, 'FPS: {:.2f}'.format(FPS), (10, height - 400), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
@@ -235,44 +228,18 @@ def run(face_model: str, num_faces: int,
             
             draw_face_landmarks(current_frame, face_landmarks)
 
+        if HAND_DETECTION_RESULT and HAND_DETECTION_RESULT.hand_landmarks:
+            hand_landmarks = HAND_DETECTION_RESULT.hand_landmarks
+            draw_hand_landmarks(current_frame, hand_landmarks)
+        else:
+            hand_landmarks = None
+
         if phone_enabled:
-            if HAND_DETECTION_RESULT:
-                # Draw landmarks and indicate handedness.
-                for idx in range(len(HAND_DETECTION_RESULT.hand_landmarks)):
-                    hand_landmarks = HAND_DETECTION_RESULT.hand_landmarks[idx]
-                    handedness = HAND_DETECTION_RESULT.handedness[idx]
-
-                    # Draw the hand landmarks.
-                    hand_landmarks_proto = landmark_pb2.NormalizedLandmarkList()
-                    hand_landmarks_proto.landmark.extend([
-                        landmark_pb2.NormalizedLandmark(x=landmark.x, y=landmark.y,
-                                                        z=landmark.z) for landmark
-                        in hand_landmarks
-                    ])
-                    mp_drawing.draw_landmarks(
-                        current_frame,
-                        hand_landmarks_proto,
-                        mp_hands.HAND_CONNECTIONS,
-                        mp_drawing_styles.get_default_hand_landmarks_style(),
-                        mp_drawing_styles.get_default_hand_connections_style())
-
-                    # Get the top left corner of the detected hand's bounding box.
-                    height, width, _ = current_frame.shape
-                    x_coordinates = [landmark.x for landmark in hand_landmarks]
-                    y_coordinates = [landmark.y for landmark in hand_landmarks]
-                    text_x = int(min(x_coordinates) * width)
-                    text_y = int(min(y_coordinates) * height) - 10
-
-                    # Draw handedness (left or right hand) on the image.
-                    cv2.putText(current_frame, f"{handedness[0].category_name}",
-                                (text_x, text_y), cv2.FONT_HERSHEY_DUPLEX,
-                                1, (88, 205, 54), 1,
-                                cv2.LINE_AA)
-
-            phone_detected, annotated_image = phone_detector.detect_phone(current_frame)
+            phone_detected, annotated_image = phone_detector.detect_phone(current_frame, hand_landmarks)
             if phone_detected:
                 print(f'Phone: ', datetime.now().strftime('%H:%M:%S'))
                 current_frame = annotated_image
+
         
         cv2.imshow('video_processing', current_frame)
 
@@ -325,7 +292,7 @@ def main():
         '--numHands',
         help='Max number of hands that can be detected by the landmarker.',
         required=False,
-        default=1)
+        default=2)
     parser.add_argument(
         '--minHandDetectionConfidence',
         help='The minimum confidence score for hand detection to be considered '
@@ -373,6 +340,13 @@ def main():
         required=False,
         default=False
     )
+    parser.add_argument(
+        '--disableHand',
+        help='Enable hand detection.',
+        action='store_true',
+        required=False,
+        default=False
+    )
     args = parser.parse_args()
 
     run(args.face_model, int(args.numFaces), args.minFaceDetectionConfidence,
@@ -380,7 +354,7 @@ def main():
         args.hand_model, int(args.numHands), args.minHandDetectionConfidence,
         args.minHandPresenceConfidence,
         int(args.cameraId), args.frameWidth, args.frameHeight,
-        not args.disableDrowsiness, not args.disableGaze, not args.disablePhone)
+        not args.disableDrowsiness, not args.disableGaze, not args.disablePhone, not args.disableHand)
 
 
 if __name__ == '__main__':

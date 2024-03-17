@@ -33,7 +33,7 @@ GAZE_HISTORY_LENGTH = 10
 GAZE_MIN_TIME = 0.5
 
 # phone detection constants
-PHONE_MODEL_ID = 'phone-3ekgi/2'
+PHONE_MODEL_ID = 'phone-3ekgi/3'
 PHONE_API_KEY = 'g2xhIxwutQ35mvQxltNJ'
 PHONE_HISTORY_LENGTH = 10
 PHONE_MIN_TIME = 1
@@ -44,6 +44,9 @@ ALL_KEYPOINTS = [MOUTH_KEYPOINTS, LEFT_EYE_KEYPOINTS, RIGHT_EYE_KEYPOINTS, HEAD_
 
 # result of the face landmark detection
 FACE_DETECTION_RESULT = None
+
+# result of the hand landmark detection
+HAND_DETECTION_RESULT = None
 
 # calculate FPS
 FPS_AVG_FRAME_COUNT = 10
@@ -103,4 +106,20 @@ def draw_face_landmarks(current_frame: np.ndarray, face_landmarks: list[vision.F
             connections=[],
             landmark_drawing_spec=mp_drawing_styles.get_default_face_mesh_tesselation_style(),
             connection_drawing_spec=None
+        )
+
+
+def draw_hand_landmarks(current_frame: np.ndarray, hand_landmarks: list[landmark_pb2.NormalizedLandmarkList]) -> None:
+    for landmarks in hand_landmarks:
+        hand_landmarks_proto = landmark_pb2.NormalizedLandmarkList()
+        hand_landmarks_proto.landmark.extend([
+            landmark_pb2.NormalizedLandmark(x=landmark.x, y=landmark.y, z=landmark.z) for landmark
+            in landmarks
+        ])
+        mp_drawing.draw_landmarks(
+            current_frame,
+            hand_landmarks_proto,
+            mp.solutions.hands.HAND_CONNECTIONS,
+            mp_drawing_styles.get_default_hand_landmarks_style(),
+            mp_drawing_styles.get_default_hand_connections_style()
         )
