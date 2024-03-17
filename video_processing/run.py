@@ -11,21 +11,24 @@ import numpy as np
 
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
+from mediapipe.framework.formats import landmark_pb2
 
-from utils import mouth_aspect_ratio, eye_aspect_ratio, draw_landmarks
+mp_hands = mp.solutions.hands
+mp_drawing = mp.solutions.drawing_utils
+mp_drawing_styles = mp.solutions.drawing_styles
+
+from utils import mouth_aspect_ratio, eye_aspect_ratio, draw_face_landmarks
 from utils import CALIBRATION_TIME, YAWN_MIN_TIME, MICROSLEEP_MIN_TIME, GAZE_MIN_TIME, PHONE_MIN_TIME
+from utils import FPS_AVG_FRAME_COUNT, COUNTER, FPS, START_TIME
+from utils import FACE_DETECTION_RESULT
+
 from yawn_detector import YawnDetector
 from microsleep_detector import MicrosleepDetector
 from gaze_detector import GazeDetector
 from phone_detector import PhoneDetector
 
-# Result of the face landmark detection
-DETECTION_RESULT = None
-
-# Calculate FPS
-FPS_AVG_FRAME_COUNT = 10
-COUNTER, FPS = 0, 0
-START_TIME = time.time()
+# Result of the hand landmark detection
+HAND_DETECTION_RESULT = None
 
 
 def capture_face_landmarks(cap, face_landmarker, calibration_time, width, height, calibration_message):
@@ -46,8 +49,8 @@ def capture_face_landmarks(cap, face_landmarker, calibration_time, width, height
         # Display the FPS on the image
         cv2.putText(current_frame, 'FPS: {:.2f}'.format(FPS), (10, height - 400), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
-        if DETECTION_RESULT and DETECTION_RESULT.face_landmarks:
-            draw_landmarks(current_frame, DETECTION_RESULT.face_landmarks[0])
+        if FACE_DETECTION_RESULT and FACE_DETECTION_RESULT.face_landmarks:
+            draw_face_landmarks(current_frame, FACE_DETECTION_RESULT.face_landmarks[0])
 
         if start_time is None:
             cv2.putText(current_frame, calibration_message, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
@@ -55,11 +58,11 @@ def capture_face_landmarks(cap, face_landmarker, calibration_time, width, height
             if cv2.waitKey(1) == 32:
                 start_time = time.time()
         else:
-            if DETECTION_RESULT and DETECTION_RESULT.face_landmarks:
-                ear = eye_aspect_ratio(DETECTION_RESULT.face_landmarks[0])
-                mar = mouth_aspect_ratio(DETECTION_RESULT.face_landmarks[0])
+            if FACE_DETECTION_RESULT and FACE_DETECTION_RESULT.face_landmarks:
+                ear = eye_aspect_ratio(FACE_DETECTION_RESULT.face_landmarks[0])
+                mar = mouth_aspect_ratio(FACE_DETECTION_RESULT.face_landmarks[0])
                 aspect_ratio_values.append((ear, mar))
-                draw_landmarks(current_frame, DETECTION_RESULT.face_landmarks[0])
+                draw_face_landmarks(current_frame, FACE_DETECTION_RESULT.face_landmarks[0])
 
             cv2.putText(current_frame, 'Finished in: ' + str(calibration_time - int(time.time() - start_time)), (width // 2 - 100, height // 2 - 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
             cv2.imshow('face_landmarker', current_frame)
@@ -70,7 +73,7 @@ def capture_face_landmarks(cap, face_landmarker, calibration_time, width, height
 
     return aspect_ratio_values
 
-def calibrate(cap: cv2.VideoCapture, face_landmarker: vision.FaceLandmarker, width: int, height: int) -> tuple[float, float, float, float]:
+def calibrate_face(cap: cv2.VideoCapture, face_landmarker: vision.FaceLandmarker, width: int, height: int) -> tuple[float, float, float, float]:
     neutral_face_message = f'Keep a neutral face with eyes open for {CALIBRATION_TIME} seconds. Press the space bar to start.'
     neutral_ear_values, neutral_mar_values = zip(*capture_face_landmarks(cap, face_landmarker, CALIBRATION_TIME, width, height, neutral_face_message))
 
@@ -94,60 +97,65 @@ def calibrate(cap: cv2.VideoCapture, face_landmarker: vision.FaceLandmarker, wid
     return neutral_ear_mean, neutral_ear_std, ear_threshold, neutral_mar_mean, neutral_mar_std, mar_threshold
 
 
-def run(model: str, num_faces: int,
+def run(face_model: str, num_faces: int,
         min_face_detection_confidence: float,
         min_face_presence_confidence: float, min_tracking_confidence: float,
+        hand_model: str, num_hands: int,
+        min_hand_detection_confidence: float,
+        min_hand_presence_confidence: float,
         camera_id: int, width: int, height: int,
         drowsiness_enabled: bool, gaze_enabled: bool, phone_enabled: bool) -> None:
-    '''Continuously run inference on images acquired from the camera.
-
-  Args:
-      model: Name of the face landmarker model bundle.
-      num_faces: Max number of faces that can be detected by the landmarker.
-      min_face_detection_confidence: The minimum confidence score for face
-        detection to be considered successful.
-      min_face_presence_confidence: The minimum confidence score of face
-        presence score in the face landmark detection.
-      min_tracking_confidence: The minimum confidence score for the face
-        tracking to be considered successful.
-      camera_id: The camera id to be passed to OpenCV.
-      width: The width of the frame captured from the camera.
-      height: The height of the frame captured from the camera.
-  '''
 
     # Start capturing video input from the camera
     cap = cv2.VideoCapture(camera_id)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
 
-    def save_result(result: vision.FaceLandmarkerResult,
+    def save_face_result(result: vision.FaceLandmarkerResult,
                     unused_output_image: mp.Image, timestamp_ms: int):
-        global FPS, COUNTER, START_TIME, DETECTION_RESULT
+        global FPS, COUNTER, START_TIME, FACE_DETECTION_RESULT
 
         # Calculate the FPS
         if COUNTER % FPS_AVG_FRAME_COUNT == 0:
             FPS = FPS_AVG_FRAME_COUNT / (time.time() - START_TIME)
             START_TIME = time.time()
 
-        DETECTION_RESULT = result
+        FACE_DETECTION_RESULT = result
         COUNTER += 1
 
     # Initialize the face landmarker model
-    base_options = python.BaseOptions(model_asset_path=model)
+    face_base_options = python.BaseOptions(model_asset_path=face_model)
     options = vision.FaceLandmarkerOptions(
-        base_options=base_options,
+        base_options=face_base_options,
         running_mode=vision.RunningMode.LIVE_STREAM,
         num_faces=num_faces,
         min_face_detection_confidence=min_face_detection_confidence,
         min_face_presence_confidence=min_face_presence_confidence,
         min_tracking_confidence=min_tracking_confidence,
         output_face_blendshapes=True,
-        result_callback=save_result)
+        result_callback=save_face_result)
     face_landmarker = vision.FaceLandmarker.create_from_options(options)
+
+    def save_hand_result(result: vision.HandLandmarkerResult,
+                    unused_output_image: mp.Image, timestamp_ms: int):
+        global HAND_DETECTION_RESULT
+        HAND_DETECTION_RESULT = result
+
+    # Initialize the hand landmarker model
+    base_options = python.BaseOptions(model_asset_path=hand_model)
+    options = vision.HandLandmarkerOptions(
+        base_options=base_options,
+        running_mode=vision.RunningMode.LIVE_STREAM,
+        num_hands=num_hands,
+        min_hand_detection_confidence=min_hand_detection_confidence,
+        min_hand_presence_confidence=min_hand_presence_confidence,
+        min_tracking_confidence=min_tracking_confidence,
+        result_callback=save_hand_result)
+    hand_landmarker = vision.HandLandmarker.create_from_options(options)
 
     # Calibrate the eye aspect ratio and mouth aspect ratio thresholds
     if drowsiness_enabled:
-        ear_mean, ear_std, ear_threshold, mar_mean, mar_std, mar_threshold = calibrate(cap, face_landmarker, width, height)
+        ear_mean, ear_std, ear_threshold, mar_mean, mar_std, mar_threshold = calibrate_face(cap, face_landmarker, width, height)
         print(f'EAR threshold: {ear_threshold}, MAR threshold: {mar_threshold}')
 
     # Initialize detectors
@@ -185,16 +193,20 @@ def run(model: str, num_faces: int,
         image = cv2.flip(image, 1)
         current_frame = image
 
-        # Run the face landmark detection model
         rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_image)
+        
+        # Run the face landmark detection model
         face_landmarker.detect_async(mp_image, time.time_ns() // 1_000_000)
+
+        # Run the hand landmark detection model
+        hand_landmarker.detect_async(mp_image, time.time_ns() // 1_000_000)
         
         # Display the FPS on the image
         cv2.putText(current_frame, 'FPS: {:.2f}'.format(FPS), (10, height - 400), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
-        if DETECTION_RESULT and DETECTION_RESULT.face_landmarks:
-            face_landmarks = DETECTION_RESULT.face_landmarks[0]
+        if FACE_DETECTION_RESULT and FACE_DETECTION_RESULT.face_landmarks:
+            face_landmarks = FACE_DETECTION_RESULT.face_landmarks[0]
 
             if drowsiness_enabled:
                 yawn_detected, mar = yawn_detector.detect_yawn(face_landmarks)
@@ -210,12 +222,6 @@ def run(model: str, num_faces: int,
                 if gaze == 'left' or gaze == 'right':
                     print(f'Gaze: ', datetime.now().strftime('%H:%M:%S'), gaze)
 
-            if phone_enabled:
-                phone_detected, annotated_image = phone_detector.detect_phone(current_frame)
-                if phone_detected:
-                    print(f'Phone: ', datetime.now().strftime('%H:%M:%S'))
-                    current_frame = annotated_image
-
             # Display the aspect ratios on the image
             if drowsiness_enabled:
                 cv2.putText(current_frame, 'Eye aspect ratio: {:.2f}'.format(ear), 
@@ -227,9 +233,48 @@ def run(model: str, num_faces: int,
             if gaze_enabled:
                 cv2.putText(current_frame, f'Yaw: {int(yaw)}', (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
             
-            draw_landmarks(current_frame, face_landmarks)
+            draw_face_landmarks(current_frame, face_landmarks)
 
-        cv2.imshow('face_landmarker', current_frame)
+        if phone_enabled:
+            if HAND_DETECTION_RESULT:
+                # Draw landmarks and indicate handedness.
+                for idx in range(len(HAND_DETECTION_RESULT.hand_landmarks)):
+                    hand_landmarks = HAND_DETECTION_RESULT.hand_landmarks[idx]
+                    handedness = HAND_DETECTION_RESULT.handedness[idx]
+
+                    # Draw the hand landmarks.
+                    hand_landmarks_proto = landmark_pb2.NormalizedLandmarkList()
+                    hand_landmarks_proto.landmark.extend([
+                        landmark_pb2.NormalizedLandmark(x=landmark.x, y=landmark.y,
+                                                        z=landmark.z) for landmark
+                        in hand_landmarks
+                    ])
+                    mp_drawing.draw_landmarks(
+                        current_frame,
+                        hand_landmarks_proto,
+                        mp_hands.HAND_CONNECTIONS,
+                        mp_drawing_styles.get_default_hand_landmarks_style(),
+                        mp_drawing_styles.get_default_hand_connections_style())
+
+                    # Get the top left corner of the detected hand's bounding box.
+                    height, width, _ = current_frame.shape
+                    x_coordinates = [landmark.x for landmark in hand_landmarks]
+                    y_coordinates = [landmark.y for landmark in hand_landmarks]
+                    text_x = int(min(x_coordinates) * width)
+                    text_y = int(min(y_coordinates) * height) - 10
+
+                    # Draw handedness (left or right hand) on the image.
+                    cv2.putText(current_frame, f"{handedness[0].category_name}",
+                                (text_x, text_y), cv2.FONT_HERSHEY_DUPLEX,
+                                1, (88, 205, 54), 1,
+                                cv2.LINE_AA)
+
+            phone_detected, annotated_image = phone_detector.detect_phone(current_frame)
+            if phone_detected:
+                print(f'Phone: ', datetime.now().strftime('%H:%M:%S'))
+                current_frame = annotated_image
+        
+        cv2.imshow('video_processing', current_frame)
 
         # Stop the program if the ESC key is pressed.
         if cv2.waitKey(1) == 27:
@@ -244,7 +289,7 @@ def main():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
-        '--model',
+        '--face_model',
         help='Name of face landmarker model.',
         required=False,
         default='face_landmarker.task')
@@ -269,6 +314,28 @@ def main():
         '--minTrackingConfidence',
         help='The minimum confidence score for the face tracking to be '
              'considered successful.',
+        required=False,
+        default=0.5)
+    parser.add_argument(
+        '--hand_model',
+        help='Name of the hand landmarker model bundle.',
+        required=False,
+        default='hand_landmarker.task')
+    parser.add_argument(
+        '--numHands',
+        help='Max number of hands that can be detected by the landmarker.',
+        required=False,
+        default=1)
+    parser.add_argument(
+        '--minHandDetectionConfidence',
+        help='The minimum confidence score for hand detection to be considered '
+             'successful.',
+        required=False,
+        default=0.5)
+    parser.add_argument(
+        '--minHandPresenceConfidence',
+        help='The minimum confidence score of hand presence score in the hand '
+             'landmark detection.',
         required=False,
         default=0.5)
     # Finding the camera ID can be very reliant on platform-dependent methods.
@@ -308,8 +375,10 @@ def main():
     )
     args = parser.parse_args()
 
-    run(args.model, int(args.numFaces), args.minFaceDetectionConfidence,
+    run(args.face_model, int(args.numFaces), args.minFaceDetectionConfidence,
         args.minFacePresenceConfidence, args.minTrackingConfidence,
+        args.hand_model, int(args.numHands), args.minHandDetectionConfidence,
+        args.minHandPresenceConfidence,
         int(args.cameraId), args.frameWidth, args.frameHeight,
         not args.disableDrowsiness, not args.disableGaze, not args.disablePhone)
 

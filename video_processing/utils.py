@@ -1,3 +1,4 @@
+import time
 import numpy as np
 import mediapipe as mp
 from mediapipe.tasks.python import vision
@@ -41,6 +42,14 @@ PHONE_CONFIDENCE_THRESHOLD = 0.5
 # all face landmark keypoints
 ALL_KEYPOINTS = [MOUTH_KEYPOINTS, LEFT_EYE_KEYPOINTS, RIGHT_EYE_KEYPOINTS, HEAD_POSE_KEYPOINTS]
 
+# result of the face landmark detection
+FACE_DETECTION_RESULT = None
+
+# calculate FPS
+FPS_AVG_FRAME_COUNT = 10
+COUNTER, FPS = 0, 0
+START_TIME = time.time()
+
 
 def euclidean_distance(p1: landmark_pb2.NormalizedLandmark, p2: landmark_pb2.NormalizedLandmark) -> float:
     return ((p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2) ** 0.5
@@ -74,7 +83,7 @@ def eye_aspect_ratio(face_landmarks: landmark_pb2.NormalizedLandmarkList) -> flo
     return (left_ear + right_ear) / 2.0
 
 
-def draw_landmarks(current_frame: np.ndarray, face_landmarks: list[vision.FaceLandmarker]) -> None:
+def draw_face_landmarks(current_frame: np.ndarray, face_landmarks: list[vision.FaceLandmarker]) -> None:
     face_landmarks_proto = landmark_pb2.NormalizedLandmarkList()
     face_landmarks_proto.landmark.extend([
         landmark_pb2.NormalizedLandmark(x=landmark.x,
