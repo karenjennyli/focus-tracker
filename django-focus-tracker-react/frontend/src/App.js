@@ -1,17 +1,23 @@
 import './App.css';
 import React from 'react';
+import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import Chart from "./Chart";
 import PChart from "./PieChart";
 import LChart from "./LineChart";
-import WebcamStream from './WebcamStream';
+// import WebcamStream from './WebcamStream';
+import YawningData from './YawningInfo';
 
 function App() {
   return (
-    <div className="App">
-      <Header />
-      <MainContent />
-      <WebcamStream />
-    </div>
+    <Router>
+      <div className="App">
+        <Header />
+        <Routes> {/* Use Routes instead of Switch */}
+          <Route path="/" element={<MainContent />} />
+          <Route path="/yawning-info" element={<YawningData />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 
@@ -37,7 +43,7 @@ function MainContent() {
       <div className="intro">
         <p>This App enables users to measure their focus and associated distractions during <br></br>work sessions to help them identify actionable steps to improve their productivity.</p>
         <br></br>
-        <button className="get-started">Get Started</button>
+        <Link to="/yawning-info"><button className="get-started">Get Started</button></Link>
       </div>
       <div className="charts-container">
         <div className="chart">

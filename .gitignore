@@ -7,4 +7,8 @@ eeg_headset/data_collection/train/
 eeg_headset/data_collection/valid/
 phone_detector/my_model/datasets
 **/.DS_Store
+<<<<<<< HEAD
 **/__pycache__
+=======
+db.sqlite3
+>>>>>>> arnav2
