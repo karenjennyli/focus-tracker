@@ -12,7 +12,10 @@ from utils import PHONE_MODEL_ID, PHONE_API_KEY, PHONE_CONFIDENCE_THRESHOLD
 
 class PhoneDetector:
 
-    def __init__(self, min_time: int, history_length: int = 5, confidence: float = PHONE_CONFIDENCE_THRESHOLD):
+    def __init__(self, width: int, height: int, min_time: int, history_length: int = 5,
+                 confidence: float = PHONE_CONFIDENCE_THRESHOLD):
+        self.width = width
+        self.height = height
         self.min_time = min_time
         self.history_length = history_length
         self.phones_history = []
@@ -26,19 +29,21 @@ class PhoneDetector:
 
 
     def get_phones_coords(self, detections: sv.Detections) -> list[tuple[int, int]]:
-        # get the center of the bounding box for each detection
         phones_coords = []
         for x1, y1, x2, y2 in detections.xyxy:
-            center = int((x1 + x2) / 2), int((y1 + y2) / 2)
-            phones_coords.append(center)
+            x = int((x1 + x2) / 2)
+            y = int((y1 + y2) / 2)
+            size = int(((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5)
+            phones_coords.append((x, y, size))
         return phones_coords
     
 
     def get_hands_coords(self, hand_landmarks: list[landmark_pb2.NormalizedLandmarkList]) -> list[tuple[int, int]]:
         hands_coords = []
-        # TODO: get the center of each hand
-        for landmark in hand_landmarks:
-            pass
+        for landmarks in hand_landmarks:
+            x = int(sum([landmark.x * self.width for landmark in landmarks]) / len(landmarks))
+            y = int(sum([landmark.y * self.height for landmark in landmarks]) / len(landmarks))
+            hands_coords.append((x, y))
         return hands_coords
 
     
@@ -61,6 +66,10 @@ class PhoneDetector:
             self.hands_history.append(hands_coords)
             if len(self.hands_history) > self.history_length:
                 self.hands_history.pop(0)
+        else:
+            self.hands_history.append([(-1, -1)])
+            if len(self.hands_history) > self.history_length:
+                self.hands_history.pop(0)
             
         if self.holding_phone(self.phones_history, self.hands_history):
             # TODO: do some check so that we don't duplicate detections within x (5?) seconds of each other
@@ -78,27 +87,28 @@ class PhoneDetector:
 
     def holding_phone(self, phones_history: list[tuple[int, int]],
                       hands_history: list[landmark_pb2.NormalizedLandmarkList]) -> bool:
+        # TODO: scale distance threshold based on size of phone in frame
+
+        count_valid = 0
+        for phones_coords, hands_coords in zip(phones_history, hands_history):
+            # check all combinations of phones and hands that their distance is less than threshold based on size of phone
+            for phone in phones_coords:
+                for hand in hands_coords:
+                    distance = int(np.linalg.norm(np.array(phone[:2]) - np.array(hand)))
+                    distance_threshold = int(phone[2] / 2)
+                    print(distance, distance_threshold)
+                    if hand != (-1, -1) and distance < distance_threshold:
+                        count_valid += 1
+                        break
+
+        return count_valid >= self.history_length * 0.8
+
         '''
-        Count number of phone detections in history
-        Example Detections:
-        `Detections(xyxy=array([], shape=(0, 4), dtype=float32), mask=None, confidence=array([], dtype=float32), class_id=array([], dtype=int64), tracker_id=None, data={})`
-        `Detections(xyxy=array([[       1201,         417,        1588,         814]]), mask=None, confidence=array([     0.7198]), class_id=array([0]), tracker_id=None, data={'class_name': array(['phone'], dtype='<U5')})`
-
-        keep count of how many actual phone detections are in the history
-
-        for each detections in detections_history:
-            for each detection in detections:
-                if location of phone is close to location of hand:
-                    increment count
-
-        if the count is greater than 80% of the history length, return True
-
-        '''
-        # TODO: check that a phone is close to a hand
-
+        # naive approach
         count = 0
         for phones_coords in phones_history:
             if len(phones_coords) > 0:
                 count += 1
         
         return count >= self.history_length * 0.8
+        '''

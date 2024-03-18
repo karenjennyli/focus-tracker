@@ -40,7 +40,8 @@ START_TIME = time.time()
 session_id = str(uuid.uuid4())
 
 
-def capture_face_landmarks(cap, face_landmarker, calibration_time, width, height, calibration_message):
+def capture_face_landmarks(cap: cv2.VideoCapture, face_landmarker: vision.FaceLandmarker,
+                           calibration_time: int, width: int, height: int, calibration_message: str) -> list[tuple[float, float]]:
     start_time = None
     aspect_ratio_values = []
 
@@ -174,7 +175,7 @@ def run(face_model: str, num_faces: int,
     if gaze_enabled:
         gaze_detector = GazeDetector(width=width, height=height, min_time=GAZE_MIN_TIME)
     if phone_enabled:
-        phone_detector = PhoneDetector(min_time=PHONE_MIN_TIME)
+        phone_detector = PhoneDetector(width=width, height=height, min_time=PHONE_MIN_TIME)
 
     # Wait for the user to press the space bar to start the program
     while True:
@@ -214,6 +215,8 @@ def run(face_model: str, num_faces: int,
         
         # Display the FPS on the image
         cv2.putText(current_frame, 'FPS: {:.2f}'.format(FPS), (10, height - 400), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+
+        # TODO: implement facial recognition to distinguish between user's face and other faces
 
         if FACE_DETECTION_RESULT and FACE_DETECTION_RESULT.face_landmarks:
             face_landmarks = FACE_DETECTION_RESULT.face_landmarks[0]
