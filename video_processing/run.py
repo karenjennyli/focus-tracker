@@ -17,6 +17,7 @@ from utils import CALIBRATION_TIME, YAWN_MIN_TIME, MICROSLEEP_MIN_TIME, GAZE_MIN
 from utils import FPS_AVG_FRAME_COUNT, COUNTER, FPS, START_TIME
 from utils import FACE_DETECTION_RESULT, HAND_DETECTION_RESULT
 
+from people_detector import PeopleDetector
 from yawn_detector import YawnDetector
 from microsleep_detector import MicrosleepDetector
 from gaze_detector import GazeDetector
@@ -170,6 +171,7 @@ def run(face_model: str, num_faces: int,
         print(f'EAR threshold: {ear_threshold}, MAR threshold: {mar_threshold}')
 
     # Initialize detectors
+    people_detector = PeopleDetector(min_time=PHONE_MIN_TIME)
     if drowsiness_enabled:
         yawn_detector = YawnDetector(min_time=YAWN_MIN_TIME, mar_mean=mar_mean, mar_std=mar_std, threshold=mar_threshold)
         microsleep_detector = MicrosleepDetector(min_time=MICROSLEEP_MIN_TIME, ear_mean=ear_mean, ear_std=ear_std, threshold=ear_threshold)
@@ -220,8 +222,6 @@ def run(face_model: str, num_faces: int,
         # TODO: implement facial recognition to distinguish between user's face and other faces
 
         if FACE_DETECTION_RESULT and FACE_DETECTION_RESULT.face_landmarks:
-            face_landmarks = FACE_DETECTION_RESULT.face_landmarks[0]
-
             if django_enabled:
                 current_session_data = {
                     'session_id': session_id,
@@ -229,6 +229,12 @@ def run(face_model: str, num_faces: int,
                 resp = requests.post('http://127.0.0.1:8000/api/current_session', json=current_session_data)
                 # if resp.status_code == 201:
                 #         print("Current_session data successfully sent to Django")
+
+            people_detected = people_detector.detect_people(FACE_DETECTION_RESULT.face_landmarks)
+            if people_detected:
+                print(f'Other people detected: ', datetime.now().strftime('%H:%M:%S'))
+
+            face_landmarks = FACE_DETECTION_RESULT.face_landmarks[0]
 
             if drowsiness_enabled:
                 yawn_detected, mar = yawn_detector.detect_yawn(face_landmarks)
@@ -306,7 +312,7 @@ def main():
         '--numFaces',
         help='Max number of faces that can be detected by the landmarker.',
         required=False,
-        default=1)
+        default=2)
     parser.add_argument(
         '--minFaceDetectionConfidence',
         help='The minimum confidence score for face detection to be considered '
