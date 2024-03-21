@@ -12,6 +12,8 @@ from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 from mediapipe.framework.formats import landmark_pb2
 
+from deepface import DeepFace
+
 mp_face_mesh = mp.solutions.face_mesh
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
@@ -98,6 +100,10 @@ def run(model: str, num_faces: int,
         result_callback=save_result)
     detector = vision.FaceLandmarker.create_from_options(options)
 
+    # Get template face image
+    template_face = cv2.imread('dataset/karen.jpg')
+    template_face = np.array(template_face)
+
     # Continuously capture images from the camera and run inference
     while cap.isOpened():
         success, image = cap.read()
@@ -134,13 +140,14 @@ def run(model: str, num_faces: int,
             right = int(right_landmark.x * img_width)
 
             # increase bounding box size
-            width_factor = 0.15
-            height_factor = 0.15
+            width_factor = 0.5
+            height_factor = 0.5
             width_increase = int((right - left) * width_factor)
             height_increase = int((bottom - top) * height_factor)
-            left -= width_increase
-            right += width_increase
-            top -= height_increase
+            left = max(0, left - width_increase)
+            right = min(img_width, right + width_increase)
+            top = max(0, top - height_increase)
+            bottom = min(img_height, bottom + height_increase)
 
             top_left = (left, top)
             top_right = (right, top)
@@ -152,6 +159,12 @@ def run(model: str, num_faces: int,
             cv2.line(current_frame, bottom_left, bottom_right, (0, 255, 0), 2)
             cv2.line(current_frame, top_left, bottom_left, (0, 255, 0), 2)
             cv2.line(current_frame, top_right, bottom_right, (0, 255, 0), 2)
+
+            # extract the face
+            face = current_frame[top:bottom, left:right]
+            face = np.array(face)
+            resp_obj = DeepFace.verify(template_face, face, model_name="SFace", distance_metric="euclidean_l2")
+            print(resp_obj["verified"])
             
             draw_face_landmarks(current_frame, face_landmarks)
 
