@@ -114,7 +114,8 @@ def run(face_model: str, num_faces: int,
         min_hand_detection_confidence: float,
         min_hand_presence_confidence: float,
         camera_id: int, width: int, height: int,
-        drowsiness_enabled: bool, gaze_enabled: bool, phone_enabled: bool, hand_enabled: bool) -> None:
+        drowsiness_enabled: bool, gaze_enabled: bool, phone_enabled: bool, hand_enabled: bool,
+        django_enabled: bool) -> None:
 
     # Start capturing video input from the camera
     cap = cv2.VideoCapture(camera_id)
@@ -220,30 +221,32 @@ def run(face_model: str, num_faces: int,
 
         if FACE_DETECTION_RESULT and FACE_DETECTION_RESULT.face_landmarks:
             face_landmarks = FACE_DETECTION_RESULT.face_landmarks[0]
-            current_session_data = {
-                'session_id': session_id,
-            }
-            resp = requests.post('http://127.0.0.1:8000/api/current_session', json=current_session_data)
-            # if resp.status_code == 201:
-            #         print("Current_session data successfully sent to Django")
+
+            if django_enabled:
+                current_session_data = {
+                    'session_id': session_id,
+                }
+                resp = requests.post('http://127.0.0.1:8000/api/current_session', json=current_session_data)
+                # if resp.status_code == 201:
+                #         print("Current_session data successfully sent to Django")
 
             if drowsiness_enabled:
                 yawn_detected, mar = yawn_detector.detect_yawn(face_landmarks)
                 if yawn_detected:
-                    now_utc = datetime.now(pytz.utc)
-                    now_eastern = now_utc.astimezone(pytz.timezone('America/New_York'))
-
-                    data = {
-                        'session_id': session_id,
-                        'user_id': 'user123',
-                        'detection_type': 'yawn',
-                        'timestamp': now_eastern.strftime('%Y-%m-%dT%H:%M:%S'),
-                        'aspect_ratio': mar,  # Mouth Aspect Ratio for yawn detection
-                    }
-                    response = requests.post('http://127.0.0.1:8000/api/detections/', json=data)
-                    if response.status_code == 201:
-                        print("Yawn data successfully sent to Django")
-                    print(f'Yawn: ', now_eastern.strftime('%Y-%m-%dT%H:%M:%S'), 'MAR: ', mar)
+                    print(f'Yawn: ', datetime.now().strftime('%Y-%m-%dT%H:%M:%S'), 'MAR: ', mar)
+                    if django_enabled:
+                        now_utc = datetime.now(pytz.utc)
+                        now_eastern = now_utc.astimezone(pytz.timezone('America/New_York'))
+                        data = {
+                            'session_id': session_id,
+                            'user_id': 'user123',
+                            'detection_type': 'yawn',
+                            'timestamp': now_eastern.strftime('%Y-%m-%dT%H:%M:%S'),
+                            'aspect_ratio': mar,  # Mouth Aspect Ratio for yawn detection
+                        }
+                        response = requests.post('http://127.0.0.1:8000/api/detections/', json=data)
+                        if response.status_code == 201:
+                            print("Yawn data successfully sent to Django")
 
                 microsleep_detected, ear = microsleep_detector.detect_microsleep(face_landmarks)
                 if microsleep_detected:
@@ -386,6 +389,13 @@ def main():
         required=False,
         default=False
     )
+    parser.add_argument(
+        '--disableDjango',
+        help='Enable Django server.',
+        action='store_true',
+        required=False,
+        default=False
+    )
     args = parser.parse_args()
 
     run(args.face_model, int(args.numFaces), args.minFaceDetectionConfidence,
@@ -393,7 +403,8 @@ def main():
         args.hand_model, int(args.numHands), args.minHandDetectionConfidence,
         args.minHandPresenceConfidence,
         int(args.cameraId), args.frameWidth, args.frameHeight,
-        not args.disableDrowsiness, not args.disableGaze, not args.disablePhone, not args.disableHand)
+        not args.disableDrowsiness, not args.disableGaze, not args.disablePhone, not args.disableHand,
+        not args.disableDjango)
 
 
 if __name__ == '__main__':
