@@ -87,8 +87,6 @@ class PhoneDetector:
 
     def holding_phone(self, phones_history: list[tuple[int, int]],
                       hands_history: list[landmark_pb2.NormalizedLandmarkList]) -> bool:
-        # TODO: scale distance threshold based on size of phone in frame
-
         count_valid = 0
         for phones_coords, hands_coords in zip(phones_history, hands_history):
             # check all combinations of phones and hands that their distance is less than threshold based on size of phone
@@ -102,13 +100,3 @@ class PhoneDetector:
                         break
 
         return count_valid >= self.history_length * 0.8
-
-        '''
-        # naive approach
-        count = 0
-        for phones_coords in phones_history:
-            if len(phones_coords) > 0:
-                count += 1
-        
-        return count >= self.history_length * 0.8
-        '''
