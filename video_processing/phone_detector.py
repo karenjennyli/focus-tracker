@@ -94,7 +94,6 @@ class PhoneDetector:
                 for hand in hands_coords:
                     distance = int(np.linalg.norm(np.array(phone[:2]) - np.array(hand)))
                     distance_threshold = int(phone[2] / 2)
-                    print(distance, distance_threshold)
                     if hand != (-1, -1) and distance < distance_threshold:
                         count_valid += 1
                         break
