@@ -144,7 +144,7 @@ def run(face_model: str, num_faces: int,
         min_face_detection_confidence=min_face_detection_confidence,
         min_face_presence_confidence=min_face_presence_confidence,
         min_tracking_confidence=min_tracking_confidence,
-        output_face_blendshapes=True,
+        output_face_blendshapes=False,
         result_callback=save_face_result)
     face_landmarker = vision.FaceLandmarker.create_from_options(options)
 
