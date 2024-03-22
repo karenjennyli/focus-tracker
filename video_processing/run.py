@@ -26,6 +26,7 @@ from phone_detector import PhoneDetector
 import requests
 import uuid
 import pytz
+import base64
 
 # Result of the face landmark detection
 DETECTION_RESULT = None
@@ -179,6 +180,10 @@ def run(face_model: str, num_faces: int,
         gaze_detector = GazeDetector(width=width, height=height, min_time=GAZE_MIN_TIME)
     if phone_enabled:
         phone_detector = PhoneDetector(width=width, height=height, min_time=PHONE_MIN_TIME)
+    
+    def encode_image_to_base64(image):
+        _, buffer = cv2.imencode('.jpg', image)
+        return base64.b64encode(buffer).decode()
 
     # Wait for the user to press the space bar to start the program
     while True:
@@ -243,12 +248,14 @@ def run(face_model: str, num_faces: int,
                     if django_enabled:
                         now_utc = datetime.now(pytz.utc)
                         now_eastern = now_utc.astimezone(pytz.timezone('America/New_York'))
+                        encoded_image = encode_image_to_base64(image)
                         data = {
                             'session_id': session_id,
                             'user_id': 'user123',
                             'detection_type': 'yawn',
                             'timestamp': now_eastern.strftime('%Y-%m-%dT%H:%M:%S'),
                             'aspect_ratio': mar,  # Mouth Aspect Ratio for yawn detection
+                            'image': encoded_image
                         }
                         response = requests.post('http://127.0.0.1:8000/api/detections/', json=data)
                         if response.status_code == 201:

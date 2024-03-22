@@ -5,10 +5,17 @@ from .models import DetectionEvent, Session
 from .serializers import DetectionEventSerializer
 from django.shortcuts import get_list_or_404
 from rest_framework import status
+from django.core.files.base import ContentFile
+import base64
 
 class DetectionEventView(APIView):
     def post(self, request, format=None):
         print("Received POST data:", request.data)
+        # Decode image if present
+        if 'image' in request.data:
+            imgstr = request.data['image']  # Direct base64 data
+            data = ContentFile(base64.b64decode(imgstr), name='temp.jpg')  # Assuming JPEG format
+            request.data['image'] = data
 
         serializer = DetectionEventSerializer(data=request.data)
         if serializer.is_valid():
