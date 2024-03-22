@@ -267,12 +267,14 @@ def run(face_model: str, num_faces: int,
                     if django_enabled:
                         now_utc = datetime.now(pytz.utc)
                         now_eastern = now_utc.astimezone(pytz.timezone('America/New_York'))
+                        encoded_image = encode_image_to_base64(image)
                         data = {
                             'session_id': session_id,
                             'user_id': 'user123',
                             'detection_type': 'sleep',
                             'timestamp': now_eastern.strftime('%Y-%m-%dT%H:%M:%S'),
                             'aspect_ratio': ear, 
+                            'image': encoded_image
                         }
                         response = requests.post('http://127.0.0.1:8000/api/detections/', json=data)
                         if response.status_code == 201:
@@ -285,12 +287,14 @@ def run(face_model: str, num_faces: int,
                     if django_enabled:
                         now_utc = datetime.now(pytz.utc)
                         now_eastern = now_utc.astimezone(pytz.timezone('America/New_York'))
+                        encoded_image = encode_image_to_base64(image)
                         data = {
                             'session_id': session_id,
                             'user_id': 'user123',
                             'detection_type': 'gaze ' + gaze,
                             'timestamp': now_eastern.strftime('%Y-%m-%dT%H:%M:%S'),
                             'aspect_ratio': yaw, 
+                            'image': encoded_image
                         }
                         response = requests.post('http://127.0.0.1:8000/api/detections/', json=data)
                         if response.status_code == 201:
