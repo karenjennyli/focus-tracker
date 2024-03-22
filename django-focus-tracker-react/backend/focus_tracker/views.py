@@ -35,14 +35,14 @@ class CurrentSessionView(APIView):
             return Response({'status': 'error', 'message': 'No sessions available'}, status=404)
 
 
-class YawningDataView(APIView):
+class DetectionDataView(APIView):
     def get(self, request, *args, **kwargs):
         session_id = request.query_params.get('session_id')
         # print("HERE" + str(session_id))
         if session_id:
-            yawning_data = DetectionEvent.objects.filter(session_id=session_id, detection_type='yawn').order_by('-timestamp')
+            detection_data = DetectionEvent.objects.filter(session_id=session_id).order_by('-timestamp')
         else:
-            yawning_data = get_list_or_404(DetectionEvent, detection_type='yawn')
-        serializer = DetectionEventSerializer(yawning_data, many=True)
+            detection_data = get_list_or_404(DetectionEvent)
+        serializer = DetectionEventSerializer(detection_data, many=True)
         return Response(serializer.data)
     

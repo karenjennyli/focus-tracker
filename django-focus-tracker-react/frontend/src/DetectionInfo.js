@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import './YawningData.css'; // Assuming your styles are in YawningData.css
+import './DetectionData.css'; // Assuming your styles are in DetectionData.css
 
-function YawningData() {
-    const [yawningData, setYawningData] = useState([]);
+function DetectionData() {
+    const [DetectionData, setDetectionData] = useState([]);
     // Add state to track the current session ID. This is initialized in the run.py file
     const [sessionId, setSessionId] = useState(null);
 
@@ -19,17 +19,17 @@ function YawningData() {
     useEffect(() => {
         if (!sessionId) return; // Don't fetch data if session ID hasn't been set yet
 
-        const fetchYawningData = () => {
-            fetch(`http://127.0.0.1:8000/api/yawning-data/?session_id=${sessionId}`)
+        const fetchDetectionData = () => {
+            fetch(`http://127.0.0.1:8000/api/detection-data/?session_id=${sessionId}`)
                 .then(response => response.json())
                 .then(data => {
-                    console.log('Updating yawning data for session:', sessionId);
-                    setYawningData(data); // Update state with data from the current session
+                    console.log('Updating detection data for session:', sessionId);
+                    setDetectionData(data); // Update state with data from the current session
                 })
-                .catch(error => console.error('Error fetching yawning data:', error));
+                .catch(error => console.error('Error fetching distraction data:', error));
         };
 
-        const intervalId = setInterval(fetchYawningData, 1000); // Poll every 1000 milliseconds (1 second)
+        const intervalId = setInterval(fetchDetectionData, 1000); // Poll every 1000 milliseconds (1 second)
 
         return () => clearInterval(intervalId); // Cleanup interval on unmount
     }, [sessionId]); // Rerun this effect if sessionId changes
@@ -58,32 +58,30 @@ function YawningData() {
         <div>
             <h1>Current Session</h1>
             <h2>Real-Time Updates</h2>
-            {yawningData.length > 0 ? (
-                <table className="yawning-table">
+            {DetectionData.length > 0 ? (
+                <table className="detection-table">
                     <thead>
                         <tr>
                             <th>Timestamp</th>
                             <th>Distraction Type</th>
-                            <th>Aspect Ratio</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {yawningData.slice(0, 6).map((data, index) => (
+                        {DetectionData.slice(0, 6).map((data, index) => (
                             <tr key={index}>
                                 <td>{parseAndFormatTime(data.timestamp)}</td>
                                 <td>{data.detection_type}</td>
-                                <td>{data.aspect_ratio.toFixed(2)}</td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
             ) : (
-                <p>No yawning data available for session {sessionId}.</p>
+                <p>No distraction data available for session {sessionId}.</p>
             )}
         </div>
     );
 }
 
-export default YawningData;
+export default DetectionData;
 
 

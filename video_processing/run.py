@@ -257,11 +257,37 @@ def run(face_model: str, num_faces: int,
                 microsleep_detected, ear = microsleep_detector.detect_microsleep(face_landmarks)
                 if microsleep_detected:
                     print(f'Microsleep: ', datetime.now().strftime('%H:%M:%S'), 'EAR: ', ear)
+                    if django_enabled:
+                        now_utc = datetime.now(pytz.utc)
+                        now_eastern = now_utc.astimezone(pytz.timezone('America/New_York'))
+                        data = {
+                            'session_id': session_id,
+                            'user_id': 'user123',
+                            'detection_type': 'sleep',
+                            'timestamp': now_eastern.strftime('%Y-%m-%dT%H:%M:%S'),
+                            'aspect_ratio': ear, 
+                        }
+                        response = requests.post('http://127.0.0.1:8000/api/detections/', json=data)
+                        if response.status_code == 201:
+                            print("Sleep data successfully sent to Django")
 
             if gaze_enabled:
                 gaze, pitch, yaw, roll = gaze_detector.detect_gaze(face_landmarks)
                 if gaze == 'left' or gaze == 'right':
                     print(f'Gaze: ', datetime.now().strftime('%H:%M:%S'), gaze)
+                    if django_enabled:
+                        now_utc = datetime.now(pytz.utc)
+                        now_eastern = now_utc.astimezone(pytz.timezone('America/New_York'))
+                        data = {
+                            'session_id': session_id,
+                            'user_id': 'user123',
+                            'detection_type': 'gaze ' + gaze,
+                            'timestamp': now_eastern.strftime('%Y-%m-%dT%H:%M:%S'),
+                            'aspect_ratio': yaw, 
+                        }
+                        response = requests.post('http://127.0.0.1:8000/api/detections/', json=data)
+                        if response.status_code == 201:
+                            print("Gaze data successfully sent to Django")
 
             # Display the aspect ratios on the image
             if drowsiness_enabled:

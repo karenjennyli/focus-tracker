@@ -1,23 +1,23 @@
-.yawning-table {
-    width: 35%; /* Adjust this value for the table size */
+.detection-table {
+    width: 30%; /* Adjust this value for the table size */
     /* margin: 0 auto; Center the table on the page */
     margin-left: 20px;
     font-size: 20px; /* Increase the font size for better readability */
     border-collapse: collapse;
 }
 
-.yawning-table th, .yawning-table td {
+.detection-table th, .detection-table td {
     padding: 12px; /* Add padding for inside cells */
     border: 1px solid #ddd; /* Add borders around cells */
     text-align: left;
 }
 
-.yawning-table th {
+.detection-table th {
     background-color: black;
 }
 
 h2 {
-    margin-left: 9vw;
+    margin-left: 7vw;
     text-align: left;
     font-size: 30px;
 }
