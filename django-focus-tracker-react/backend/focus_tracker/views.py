@@ -7,6 +7,7 @@ from django.shortcuts import get_list_or_404
 from rest_framework import status
 from django.core.files.base import ContentFile
 import base64
+from django.utils.timezone import now
 
 class DetectionEventView(APIView):
     def post(self, request, format=None):
@@ -14,10 +15,11 @@ class DetectionEventView(APIView):
         # Decode image if present
         if 'image' in request.data:
             imgstr = request.data['image']  # Direct base64 data
-            data = ContentFile(base64.b64decode(imgstr), name='temp.jpg')  # Assuming JPEG format
+            filename = f"{now().strftime('%Y%m%d%H%M%S')}.jpg"
+            data = ContentFile(base64.b64decode(imgstr), name=filename)
             request.data['image'] = data
 
-        serializer = DetectionEventSerializer(data=request.data)
+        serializer = DetectionEventSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             # print the validated data

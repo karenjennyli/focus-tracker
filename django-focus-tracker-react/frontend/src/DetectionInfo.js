@@ -5,6 +5,7 @@ function DetectionData() {
     const [DetectionData, setDetectionData] = useState([]);
     // Add state to track the current session ID. This is initialized in the run.py file
     const [sessionId, setSessionId] = useState(null);
+    const baseURL = 'http://127.0.0.1:8000';
 
     useEffect(() => {
         // Fetch the current session_id from the backend
@@ -64,6 +65,7 @@ function DetectionData() {
                         <tr>
                             <th>Timestamp</th>
                             <th>Distraction Type</th>
+                            <th>Image</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -71,6 +73,12 @@ function DetectionData() {
                             <tr key={index}>
                                 <td>{parseAndFormatTime(data.timestamp)}</td>
                                 <td>{data.detection_type}</td>
+                                <td>
+                                    {/* Conditionally render image if URL is available */}
+                                    {data.image_url && (
+                                        <img src={baseURL + data.image_url} alt="Distraction" style={{ width: '125px' }} />
+                                    )}
+                                </td>
                             </tr>
                         ))}
                     </tbody>

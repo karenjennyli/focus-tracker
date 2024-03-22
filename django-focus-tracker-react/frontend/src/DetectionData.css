@@ -1,5 +1,5 @@
 .detection-table {
-    width: 30%; /* Adjust this value for the table size */
+    width: 40%; /* Adjust this value for the table size */
     /* margin: 0 auto; Center the table on the page */
     margin-left: 20px;
     font-size: 20px; /* Increase the font size for better readability */
@@ -7,7 +7,7 @@
 }
 
 .detection-table th, .detection-table td {
-    padding: 12px; /* Add padding for inside cells */
+    padding: 8px; /* Add padding for inside cells */
     border: 1px solid #ddd; /* Add borders around cells */
     text-align: left;
 }
