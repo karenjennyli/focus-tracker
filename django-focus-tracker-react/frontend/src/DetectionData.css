@@ -26,4 +26,12 @@ h1 {
     margin-top: 20px;
 }
 
+/* Positioning the chart container absolutely */
+.chart-container {
+    position: absolute;
+    right: 100px;
+    top: 300px;
+    width: 600px; 
+    height: 600px;
+  }
 
