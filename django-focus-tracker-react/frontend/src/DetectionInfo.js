@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import './DetectionData.css'; // Assuming your styles are in DetectionData.css
+import './DetectionData.css';
 import { Scatter } from 'react-chartjs-2';
 import 'chart.js/auto';
 import 'chartjs-adapter-moment';
