@@ -8,6 +8,10 @@ from rest_framework import status
 from django.core.files.base import ContentFile
 import base64
 from django.utils.timezone import now
+import subprocess
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import os
 
 class DetectionEventView(APIView):
     def post(self, request, format=None):
@@ -54,4 +58,20 @@ class DetectionDataView(APIView):
             detection_data = get_list_or_404(DetectionEvent)
         serializer = DetectionEventSerializer(detection_data, many=True)
         return Response(serializer.data)
+
+@csrf_exempt
+def StartCalibration(request):
+    # Access environment variables
+    working_dir = os.environ.get('SCRIPT_WORKING_DIR')
+    script_path = os.environ.get('SCRIPT_PATH')
+    # working_dir = '/Users/arnavarora/Documents/focus-tracker/video_processing'
+    # script_path = '/Users/arnavarora/Documents/focus-tracker/video_processing/run.py'
+    if not working_dir or not script_path:
+        return JsonResponse({"error": "Environment variables for script path or working directory not set"}, status=500)
+
+    try:
+        subprocess.Popen(['python', script_path], cwd=working_dir)
+        return JsonResponse({"message": "Calibration started successfully"}, status=200)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
     
