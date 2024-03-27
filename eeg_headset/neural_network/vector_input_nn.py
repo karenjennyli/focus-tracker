@@ -26,8 +26,8 @@ def load_dataset(csv_file, input_columns, label_column):
     df = pd.read_csv(csv_file)
     inputs = df[input_columns].values
     
-    # Map labels from -1.0, 0.0, 1.0 to 0, 1, 2
-    label_mapping = {-1.0: 0, 0.0: 1, 1.0: 2}
+    # Map labels from -1.0, 0.0, 1.0 to 0 for not in flow and 1 for flow
+    label_mapping = {-1.0: 0, 0.0: 0, 1.0: 1}
     labels = df[label_column].map(label_mapping).values
     
     scaler = StandardScaler()
@@ -52,10 +52,10 @@ class EEGDataset(Dataset):
         return self.inputs[idx], self.labels[idx]
 
 # Load datasets
-input_columns = ['EEG.Pz', 'POW.Pz.Theta', 'POW.Pz.Alpha', 'POW.Pz.BetaL', 'POW.Pz.BetaH', 'POW.Pz.Gamma']
+input_columns = ['EEG.AF3', 'POW.AF3.Theta', 'POW.AF3.Alpha', 'POW.AF3.BetaL', 'POW.AF3.BetaH', 'POW.AF3.Gamma', 'EEG.AF4', 'POW.AF4.Theta', 'POW.AF4.Alpha', 'POW.AF4.BetaL', 'POW.AF4.BetaH', 'POW.AF4.Gamma', 'EEG.Pz', 'POW.Pz.Theta', 'POW.Pz.Alpha', 'POW.Pz.BetaL', 'POW.Pz.BetaH', 'POW.Pz.Gamma']
 label_column = 'label'
-train_inputs, train_labels = load_dataset('../data_collection/train/Pz_combined_train_data.csv', input_columns, label_column)
-val_inputs, val_labels = load_dataset('../data_collection/valid/Pz_combined_valid_data.csv', input_columns, label_column)
+train_inputs, train_labels = load_dataset('../data_collection/train/Pz_AF3_AF4_combined_train_data.csv', input_columns, label_column)
+val_inputs, val_labels = load_dataset('../data_collection/valid/Pz_AF3_AF4_combined_valid_data.csv', input_columns, label_column)
 
 # Create dataloaders
 train_dataset = EEGDataset(train_inputs, train_labels)
@@ -64,7 +64,7 @@ train_dataloader = DataLoader(train_dataset, batch_size=10, shuffle=True)
 val_dataloader = DataLoader(val_dataset, batch_size=10, shuffle=False)
 
 # Initialize the Neural Network, Loss Function, and Optimizer
-model = NeuralNetwork(input_size=6, num_classes=3)
+model = NeuralNetwork(input_size=18, num_classes=2)
 loss_fn = nn.CrossEntropyLoss()
 optimizer = Adam(model.parameters(), lr=0.001)
 

@@ -6,7 +6,7 @@ import os
 folder_path = 'valid'  # Update this to your folder path
 
 # Use glob to get all the CSV files in the folder
-csv_files = glob.glob(os.path.join(folder_path, "Pz_*.csv"))
+csv_files = glob.glob(os.path.join(folder_path, "Pz_AF3_AF4_*.csv"))
 
 # List to hold data from each CSV file
 dataframes_list = []
@@ -21,7 +21,7 @@ for csv_file in csv_files:
 combined_df = pd.concat(dataframes_list, ignore_index=True)
 
 # Save the combined dataframe to a new CSV file
-combined_csv_path = folder_path + '/' + 'Pz_combined_' + folder_path + '_data.csv'
+combined_csv_path = folder_path + '/' + 'Pz_AF3_AF4_combined_' + folder_path + '_data.csv'
 combined_df.to_csv(combined_csv_path, index=False)
 
 print(f"Combined CSV created at: {combined_csv_path}")

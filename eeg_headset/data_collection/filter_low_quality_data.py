@@ -14,8 +14,11 @@ labeled_df.dropna(subset=['POW.AF3.Theta'], inplace=True)
 # Find indices where both EQ.AF3 and EQ.AF4 have the value 4
 # eq_indices = labeled_df[(labeled_df['EQ.AF3'] == 4.0) & (labeled_df['EQ.AF4'] == 4.0)].index
 
-# Find indices where both EQ.Pz has the value 4
-eq_indices = labeled_df[(labeled_df['EQ.Pz'] == 4.0)].index
+# Find indices where EQ.Pz has the value 4
+# eq_indices = labeled_df[(labeled_df['EQ.Pz'] == 4.0)].index
+
+# Find indices where EQ.Pz, EQ.AF3, and EQ.AF4 have the value 4
+eq_indices = labeled_df[(labeled_df['EQ.Pz'] == 4.0) & (labeled_df['EQ.AF3'] == 4.0) & (labeled_df['EQ.AF4'] == 4.0)].index
 
 # Find consecutive pairs of indices where EQ values are 4 for both columns
 pairs_of_interest = [(eq_indices[i], eq_indices[i + 1]) for i in range(len(eq_indices) - 1) if eq_indices[i + 1] - eq_indices[i] == 64]
@@ -45,7 +48,7 @@ valid = valid.reset_index(drop=True)
 test = test.reset_index(drop=True)
 
 # Specify your file name
-file_name = 'filtered_data/' + 'Pz_filtered_' + labeled_data_path.split('/')[-1]
+file_name = 'filtered_data/' + 'Pz_AF3_AF4_filtered_' + labeled_data_path.split('/')[-1]
 
 # Export the DataFrame to a CSV file
 filtered_df.to_csv(file_name, index=False)
@@ -53,9 +56,9 @@ filtered_df.to_csv(file_name, index=False)
 print(f'Data exported to {file_name}')
 
 # Specify your train, valid, test file names
-train_file_name = 'train/' + 'Pz_train_' + labeled_data_path.split('/')[-1]
-valid_file_name = 'valid/' + 'Pz_valid_' + labeled_data_path.split('/')[-1]
-test_file_name = 'test/' + 'Pz_test_' + labeled_data_path.split('/')[-1]
+train_file_name = 'train/' + 'Pz_AF3_AF4_train_' + labeled_data_path.split('/')[-1]
+valid_file_name = 'valid/' + 'Pz_AF3_AF4_valid_' + labeled_data_path.split('/')[-1]
+test_file_name = 'test/' + 'Pz_AF3_AF4_test_' + labeled_data_path.split('/')[-1]
 
 # Export the DataFrame to a CSV file
 train.to_csv(train_file_name, index=False)
