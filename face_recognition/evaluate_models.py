@@ -10,6 +10,9 @@ logger = Logger()
 # List of models to evaluate
 models = ["VGG-Face", "Facenet", "Facenet512", "OpenFace", "ArcFace", "Dlib", "SFace", "GhostFaceNet"]
 
+# List of distance metrics
+distance_metrics = ["cosine", "euclidean", "euclidean_l2"]
+
 # Function to evaluate model prediction time
 def evaluate_model(model_name):
     

@@ -8,15 +8,14 @@ import cv2
 import mediapipe as mp
 import numpy as np
 
+from collections import deque
+
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 from mediapipe.framework.formats import landmark_pb2
 
 from deepface import DeepFace
-from deepface.modules import verification
 from deepface.models.FacialRecognition import FacialRecognition
-
-import matplotlib.pyplot as plt
 
 mp_face_mesh = mp.solutions.face_mesh
 mp_drawing = mp.solutions.drawing_utils
@@ -34,9 +33,11 @@ START_TIME = time.time()
 KEYPOINTS = [10, 152, 127, 356]
 
 # Detector backend
-DETECTOR_BACKEND = 'fastmtcnn'
+DETECTOR_BACKEND = 'ssd'
 MODEL_NAME = 'SFace'
 DISTANCE_METRIC = 'euclidean_l2'
+
+history = deque(maxlen=10)
 
 def draw_face_landmarks(current_frame: np.ndarray, face_landmarks: list[vision.FaceLandmarker]) -> None:
     face_landmarks_proto = landmark_pb2.NormalizedLandmarkList()
@@ -59,45 +60,6 @@ def draw_face_landmarks(current_frame: np.ndarray, face_landmarks: list[vision.F
         connection_drawing_spec=None
     )
 
-def graph_distance(img1_representation, img2_representation, current_distance, threshold, img1, img2, time):
-    img1_graph = []
-    img2_graph = []
-
-    for i in range(0, 200):
-        img1_graph.append(img1_representation)
-        img2_graph.append(img2_representation)
-
-    img1_graph = np.array(img1_graph)
-    img2_graph = np.array(img2_graph)
-
-    # ----------------------------------------------
-    # plotting
-
-    fig = plt.figure()
-
-    ax1 = fig.add_subplot(3, 2, 1)
-    plt.imshow(img1[0])
-    plt.axis("off")
-
-    ax2 = fig.add_subplot(3, 2, 2)
-    im = plt.imshow(img1_graph, interpolation="nearest", cmap=plt.cm.ocean)
-    plt.colorbar()
-
-    ax3 = fig.add_subplot(3, 2, 3)
-    plt.imshow(img2[0])
-    plt.axis("off")
-
-    ax4 = fig.add_subplot(3, 2, 4)
-    im = plt.imshow(img2_graph, interpolation="nearest", cmap=plt.cm.ocean)
-    plt.colorbar()
-
-    ax5 = fig.add_subplot(3, 2, 5)
-    plt.text(0.35, 0, f"Distance: {current_distance}")
-    plt.text(0.35, 0.5, f"Threshold: {threshold}")
-    plt.text(0.35, 1, f"Time: {time}")
-    plt.axis("off")
-
-    plt.show()
 
 def run(model: str, num_faces: int,
         min_face_detection_confidence: float,
@@ -151,21 +113,11 @@ def run(model: str, num_faces: int,
 
     # Build face recognition model
     recognition_model: FacialRecognition = DeepFace.build_model(model_name=MODEL_NAME)
-    target_size = recognition_model.input_shape
 
     # Get template face image
     template = cv2.imread('dataset/karen3.jpg')
     template = cv2.flip(template, 1)
-    template = np.array(template)
-    template_faces = DeepFace.extract_faces(template, target_size=target_size, detector_backend=DETECTOR_BACKEND, enforce_detection=False)
-    if len(template_faces) == 0:
-        sys.exit("No face detected in the template image")
-    else:
-        template = template_faces[0]["face"]
-    template = np.expand_dims(template, axis=0)  # to (1, 224, 224, 3)
-    template_embedding = recognition_model.find_embeddings(template)
-    template_embedding = np.array(template_embedding)
-    threshold = verification.find_threshold(model_name=MODEL_NAME, distance_metric=DISTANCE_METRIC)
+
 
     # Continuously capture images from the camera and run inference
     while cap.isOpened():
@@ -217,32 +169,20 @@ def run(model: str, num_faces: int,
             bottom_left = (left, bottom)
             bottom_right = (right, bottom)
 
-            start_time = time.time()
-
-            # extract the face
-            face = current_frame[top:bottom, left:right]
-            face = np.array(face)
-            faces = DeepFace.extract_faces(face, target_size=target_size, detector_backend=DETECTOR_BACKEND, enforce_detection=False)
-
-            if len(faces) == 0:
-                print("No face detected")
-                continue
-            else:
-                face = faces[0]["face"]
-            face = np.expand_dims(face, axis=0)  # to (1, 224, 224, 3)
-            face_embedding = recognition_model.find_embeddings(face)
-            face_embedding = np.array(face_embedding)
-
-            # compute the distance between the embeddings
-            distance = verification.find_distance(face_embedding, template_embedding, distance_metric=DISTANCE_METRIC)
-
-            graph_distance(template_embedding, face_embedding, distance, threshold, template, face, time.time() - start_time)
-            
             # draw the bounding box around the face
             cv2.line(current_frame, top_left, top_right, (0, 255, 0), 2)
             cv2.line(current_frame, bottom_left, bottom_right, (0, 255, 0), 2)
             cv2.line(current_frame, top_left, bottom_left, (0, 255, 0), 2)
             cv2.line(current_frame, top_right, bottom_right, (0, 255, 0), 2)
+
+            # extract the face and verify against the template
+            face = current_frame[top:bottom, left:right]
+            start_time = time.time()
+            result = DeepFace.verify(template, face, model_name=MODEL_NAME, distance_metric=DISTANCE_METRIC, detector_backend=DETECTOR_BACKEND, enforce_detection=False)
+            if not result:
+                print("No face detected")
+            print(result['verified'], time.time() - start_time)
+            
             draw_face_landmarks(current_frame, face_landmarks)
 
         cv2.imshow('face_landmarker', current_frame)

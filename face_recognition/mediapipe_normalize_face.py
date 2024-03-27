@@ -99,6 +99,49 @@ def graph_distance(img1_representation, img2_representation, current_distance, t
 
     plt.show()
 
+import pandas as pd
+mp_face_mesh = mp.solutions.face_mesh
+df = pd.DataFrame(list(mp_face_mesh.FACEMESH_FACE_OVAL), columns=['p1', 'p2'])
+ROUTES_IDX = []
+p1 = df.iloc[0]['p1']
+p2 = df.iloc[0]['p2']
+for i in range(0, df.shape[0]):
+    obj = df[df['p1'] == p2]
+    p1 = obj['p1'].values[0]
+    p2 = obj['p2'].values[0]
+    route_idx = []
+    route_idx.append(p1)
+    route_idx.append(p2)
+    ROUTES_IDX.append(route_idx)
+
+def normalize_face(img: np.ndarray, landmarks: list[vision.FaceLandmarker]) -> np.ndarray:
+    min_x = img.shape[1]
+    max_x = 0
+    min_y = img.shape[0]
+    max_y = 0
+    routes = []
+    for source_idx, target_idx in ROUTES_IDX:
+        source = landmarks[source_idx]
+        target = landmarks[target_idx]
+        relative_source = (int(img.shape[1] * source.x), int(img.shape[0] * source.y))
+        relative_target = (int(img.shape[1] * target.x), int(img.shape[0] * target.y))
+        routes.append(relative_source)
+        routes.append(relative_target)
+        min_x = min(min_x, relative_source[0], relative_target[0])
+        max_x = max(max_x, relative_source[0], relative_target[0])
+        min_y = min(min_y, relative_source[1], relative_target[1])
+        max_y = max(max_y, relative_source[1], relative_target[1])
+    
+    mask = np.zeros((img.shape[0], img.shape[1]))
+    mask = cv2.fillConvexPoly(mask, np.array(routes), 1)
+    mask = mask.astype(bool)
+    out = np.zeros_like(img)
+    out[mask] = img[mask]
+    cropped = out[min_y:max_y, min_x:max_x]
+    # plot cropped image
+    plt.imshow(cropped)
+    return cropped
+
 def run(model: str, num_faces: int,
         min_face_detection_confidence: float,
         min_face_presence_confidence: float, min_tracking_confidence: float,
@@ -191,6 +234,8 @@ def run(model: str, num_faces: int,
 
         if DETECTION_RESULT and DETECTION_RESULT.face_landmarks:
             face_landmarks = DETECTION_RESULT.face_landmarks[0]
+
+            cropped = normalize_face(rgb_image, face_landmarks)
 
             top_landmark = face_landmarks[10]
             bottom_landmark = face_landmarks[152]
