@@ -117,7 +117,7 @@ def run(face_model: str, num_faces: int,
         min_hand_presence_confidence: float,
         camera_id: int, width: int, height: int,
         drowsiness_enabled: bool, gaze_enabled: bool, phone_enabled: bool, hand_enabled: bool,
-        django_enabled: bool) -> None:
+        django_enabled: bool, hide_window: bool) -> None:
 
     # Start capturing video input from the camera
     cap = cv2.VideoCapture(camera_id)
@@ -325,8 +325,8 @@ def run(face_model: str, num_faces: int,
                 print(f'Phone: ', datetime.now().strftime('%H:%M:%S'))
                 current_frame = annotated_image
 
-        
-        show_in_window('video_processing', current_frame)
+        if not hide_window:
+            show_in_window('video_processing', current_frame)
 
         # Stop the program if the ESC key is pressed.
         if cv2.waitKey(1) == 27:
@@ -439,6 +439,13 @@ def main():
         required=False,
         default=False
     )
+    parser.add_argument(
+        '--hideWindow',
+        help='Hide the window.',
+        action='store_true',
+        required=False,
+        default=False
+    )
     args = parser.parse_args()
 
     run(args.face_model, int(args.numFaces), args.minFaceDetectionConfidence,
@@ -447,7 +454,7 @@ def main():
         args.minHandPresenceConfidence,
         int(args.cameraId), args.frameWidth, args.frameHeight,
         not args.disableDrowsiness, not args.disableGaze, not args.disablePhone, not args.disableHand,
-        not args.disableDjango)
+        not args.disableDjango, args.hideWindow)
 
 
 if __name__ == '__main__':
