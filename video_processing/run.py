@@ -12,7 +12,7 @@ import numpy as np
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 
-from utils import mouth_aspect_ratio, eye_aspect_ratio, draw_face_landmarks, draw_hand_landmarks
+from utils import mouth_aspect_ratio, eye_aspect_ratio, draw_face_landmarks, draw_hand_landmarks, show_in_window
 from utils import CALIBRATION_TIME, YAWN_MIN_TIME, MICROSLEEP_MIN_TIME, GAZE_MIN_TIME, PHONE_MIN_TIME
 from utils import FPS_AVG_FRAME_COUNT, COUNTER, FPS, START_TIME
 from utils import FACE_DETECTION_RESULT, HAND_DETECTION_RESULT
@@ -66,7 +66,7 @@ def capture_face_landmarks(cap: cv2.VideoCapture, face_landmarker: vision.FaceLa
 
         if start_time is None:
             cv2.putText(current_frame, calibration_message, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-            cv2.imshow('video_processing', current_frame)
+            show_in_window('video_processing', current_frame)
             if cv2.waitKey(1) == 32:
                 start_time = time.time()
         else:
@@ -77,7 +77,7 @@ def capture_face_landmarks(cap: cv2.VideoCapture, face_landmarker: vision.FaceLa
                 draw_face_landmarks(current_frame, FACE_DETECTION_RESULT.face_landmarks[0])
 
             cv2.putText(current_frame, 'Finished in: ' + str(calibration_time - int(time.time() - start_time)), (width // 2 - 100, height // 2 - 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-            cv2.imshow('video_processing', current_frame)
+            show_in_window('video_processing', current_frame)
             cv2.waitKey(1)
 
             if time.time() - start_time >= calibration_time:
@@ -117,7 +117,7 @@ def run(face_model: str, num_faces: int,
         min_hand_presence_confidence: float,
         camera_id: int, width: int, height: int,
         drowsiness_enabled: bool, gaze_enabled: bool, phone_enabled: bool, hand_enabled: bool,
-        django_enabled: bool) -> None:
+        django_enabled: bool, hide_window: bool) -> None:
 
     # Start capturing video input from the camera
     cap = cv2.VideoCapture(camera_id)
@@ -196,7 +196,7 @@ def run(face_model: str, num_faces: int,
         image = cv2.flip(image, 1)
         current_frame = image
         cv2.putText(current_frame, 'Press the space bar to start the program.', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-        cv2.imshow('video_processing', image)
+        show_in_window('video_processing', current_frame)
         if cv2.waitKey(1) == 32:
             break
 
@@ -325,8 +325,8 @@ def run(face_model: str, num_faces: int,
                 print(f'Phone: ', datetime.now().strftime('%H:%M:%S'))
                 current_frame = annotated_image
 
-        
-        cv2.imshow('video_processing', current_frame)
+        if not hide_window:
+            show_in_window('video_processing', current_frame)
 
         # Stop the program if the ESC key is pressed.
         if cv2.waitKey(1) == 27:
@@ -439,6 +439,13 @@ def main():
         required=False,
         default=False
     )
+    parser.add_argument(
+        '--hideWindow',
+        help='Hide the window.',
+        action='store_true',
+        required=False,
+        default=False
+    )
     args = parser.parse_args()
 
     run(args.face_model, int(args.numFaces), args.minFaceDetectionConfidence,
@@ -447,7 +454,7 @@ def main():
         args.minHandPresenceConfidence,
         int(args.cameraId), args.frameWidth, args.frameHeight,
         not args.disableDrowsiness, not args.disableGaze, not args.disablePhone, not args.disableHand,
-        not args.disableDjango)
+        not args.disableDjango, args.hideWindow)
 
 
 if __name__ == '__main__':

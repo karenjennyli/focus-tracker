@@ -1,4 +1,5 @@
 import time
+import cv2
 import numpy as np
 import mediapipe as mp
 from mediapipe.tasks.python import vision
@@ -55,6 +56,20 @@ HAND_DETECTION_RESULT = None
 FPS_AVG_FRAME_COUNT = 10
 COUNTER, FPS = 0, 0
 START_TIME = time.time()
+
+# window location (top left corner)
+SCREEN_WIDTH = 3024
+SCREEN_HEIGHT = 1964
+WINDOW_WIDTH = 1920
+WINDOW_HEIGHT = 1080
+WINDOW_X = SCREEN_WIDTH // 4 - WINDOW_WIDTH // 4
+WINDOW_Y = SCREEN_HEIGHT // 4 - WINDOW_HEIGHT // 4
+
+
+def show_in_window(winname, img, x=WINDOW_X, y=WINDOW_Y):
+    cv2.namedWindow(winname)
+    cv2.moveWindow(winname, x, y)
+    cv2.imshow(winname, img)
 
 
 def euclidean_distance(p1: landmark_pb2.NormalizedLandmark, p2: landmark_pb2.NormalizedLandmark) -> float:
