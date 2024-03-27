@@ -17,6 +17,7 @@ from utils import CALIBRATION_TIME, YAWN_MIN_TIME, MICROSLEEP_MIN_TIME, GAZE_MIN
 from utils import FPS_AVG_FRAME_COUNT, COUNTER, FPS, START_TIME
 from utils import FACE_DETECTION_RESULT, HAND_DETECTION_RESULT
 
+from people_detector import PeopleDetector
 from yawn_detector import YawnDetector
 from microsleep_detector import MicrosleepDetector
 from gaze_detector import GazeDetector
@@ -25,6 +26,7 @@ from phone_detector import PhoneDetector
 import requests
 import uuid
 import pytz
+import base64
 
 # Result of the face landmark detection
 DETECTION_RESULT = None
@@ -100,7 +102,7 @@ def calibrate_face(cap: cv2.VideoCapture, face_landmarker: vision.FaceLandmarker
     # Calculate the thresholds for the eye aspect ratio and mouth aspect ratio
     ear_threshold = np.mean(eye_close_ear_values) + np.mean(eye_close_ear_values) * 0.25
     ear_threshold = (ear_threshold - neutral_ear_mean) / neutral_ear_std
-    mar_threshold = np.mean(yawn_mar_values) - np.mean(yawn_mar_values) * 0.1
+    mar_threshold = np.mean(yawn_mar_values) - np.mean(yawn_mar_values) * 0.25
     mar_threshold = (mar_threshold - neutral_mar_mean) / neutral_mar_std
 
     # Return the mean and standard deviation of the aspect ratios
@@ -114,7 +116,8 @@ def run(face_model: str, num_faces: int,
         min_hand_detection_confidence: float,
         min_hand_presence_confidence: float,
         camera_id: int, width: int, height: int,
-        drowsiness_enabled: bool, gaze_enabled: bool, phone_enabled: bool, hand_enabled: bool) -> None:
+        drowsiness_enabled: bool, gaze_enabled: bool, phone_enabled: bool, hand_enabled: bool,
+        django_enabled: bool) -> None:
 
     # Start capturing video input from the camera
     cap = cv2.VideoCapture(camera_id)
@@ -142,7 +145,7 @@ def run(face_model: str, num_faces: int,
         min_face_detection_confidence=min_face_detection_confidence,
         min_face_presence_confidence=min_face_presence_confidence,
         min_tracking_confidence=min_tracking_confidence,
-        output_face_blendshapes=True,
+        output_face_blendshapes=False,
         result_callback=save_face_result)
     face_landmarker = vision.FaceLandmarker.create_from_options(options)
 
@@ -169,6 +172,7 @@ def run(face_model: str, num_faces: int,
         print(f'EAR threshold: {ear_threshold}, MAR threshold: {mar_threshold}')
 
     # Initialize detectors
+    people_detector = PeopleDetector(min_time=PHONE_MIN_TIME)
     if drowsiness_enabled:
         yawn_detector = YawnDetector(min_time=YAWN_MIN_TIME, mar_mean=mar_mean, mar_std=mar_std, threshold=mar_threshold)
         microsleep_detector = MicrosleepDetector(min_time=MICROSLEEP_MIN_TIME, ear_mean=ear_mean, ear_std=ear_std, threshold=ear_threshold)
@@ -176,6 +180,10 @@ def run(face_model: str, num_faces: int,
         gaze_detector = GazeDetector(width=width, height=height, min_time=GAZE_MIN_TIME)
     if phone_enabled:
         phone_detector = PhoneDetector(width=width, height=height, min_time=PHONE_MIN_TIME)
+    
+    def encode_image_to_base64(image):
+        _, buffer = cv2.imencode('.jpg', image)
+        return base64.b64encode(buffer).decode()
 
     # Wait for the user to press the space bar to start the program
     while True:
@@ -219,40 +227,78 @@ def run(face_model: str, num_faces: int,
         # TODO: implement facial recognition to distinguish between user's face and other faces
 
         if FACE_DETECTION_RESULT and FACE_DETECTION_RESULT.face_landmarks:
+            if django_enabled:
+                current_session_data = {
+                    'session_id': session_id,
+                }
+                resp = requests.post('http://127.0.0.1:8000/api/current_session', json=current_session_data)
+                # if resp.status_code == 201:
+                #         print("Current_session data successfully sent to Django")
+
+            people_detected = people_detector.detect_people(FACE_DETECTION_RESULT.face_landmarks)
+            if people_detected:
+                print(f'Other people detected: ', datetime.now().strftime('%H:%M:%S'))
+
             face_landmarks = FACE_DETECTION_RESULT.face_landmarks[0]
-            current_session_data = {
-                'session_id': session_id,
-            }
-            resp = requests.post('http://127.0.0.1:8000/api/current_session', json=current_session_data)
-            # if resp.status_code == 201:
-            #         print("Current_session data successfully sent to Django")
 
             if drowsiness_enabled:
                 yawn_detected, mar = yawn_detector.detect_yawn(face_landmarks)
                 if yawn_detected:
-                    now_utc = datetime.now(pytz.utc)
-                    now_eastern = now_utc.astimezone(pytz.timezone('America/New_York'))
-
-                    data = {
-                        'session_id': session_id,
-                        'user_id': 'user123',
-                        'detection_type': 'yawn',
-                        'timestamp': now_eastern.strftime('%Y-%m-%dT%H:%M:%S'),
-                        'aspect_ratio': mar,  # Mouth Aspect Ratio for yawn detection
-                    }
-                    response = requests.post('http://127.0.0.1:8000/api/detections/', json=data)
-                    if response.status_code == 201:
-                        print("Yawn data successfully sent to Django")
-                    print(f'Yawn: ', now_eastern.strftime('%Y-%m-%dT%H:%M:%S'), 'MAR: ', mar)
+                    print(f'Yawn: ', datetime.now().strftime('%Y-%m-%dT%H:%M:%S'), 'MAR: ', mar)
+                    if django_enabled:
+                        now_utc = datetime.now(pytz.utc)
+                        now_eastern = now_utc.astimezone(pytz.timezone('America/New_York'))
+                        encoded_image = encode_image_to_base64(image)
+                        data = {
+                            'session_id': session_id,
+                            'user_id': 'user123',
+                            'detection_type': 'yawn',
+                            'timestamp': now_eastern.strftime('%Y-%m-%dT%H:%M:%S'),
+                            'aspect_ratio': mar,  # Mouth Aspect Ratio for yawn detection
+                            'image': encoded_image
+                        }
+                        response = requests.post('http://127.0.0.1:8000/api/detections/', json=data)
+                        if response.status_code == 201:
+                            print("Yawn data successfully sent to Django")
 
                 microsleep_detected, ear = microsleep_detector.detect_microsleep(face_landmarks)
                 if microsleep_detected:
                     print(f'Microsleep: ', datetime.now().strftime('%H:%M:%S'), 'EAR: ', ear)
+                    if django_enabled:
+                        now_utc = datetime.now(pytz.utc)
+                        now_eastern = now_utc.astimezone(pytz.timezone('America/New_York'))
+                        encoded_image = encode_image_to_base64(image)
+                        data = {
+                            'session_id': session_id,
+                            'user_id': 'user123',
+                            'detection_type': 'sleep',
+                            'timestamp': now_eastern.strftime('%Y-%m-%dT%H:%M:%S'),
+                            'aspect_ratio': ear, 
+                            'image': encoded_image
+                        }
+                        response = requests.post('http://127.0.0.1:8000/api/detections/', json=data)
+                        if response.status_code == 201:
+                            print("Sleep data successfully sent to Django")
 
             if gaze_enabled:
                 gaze, pitch, yaw, roll = gaze_detector.detect_gaze(face_landmarks)
                 if gaze == 'left' or gaze == 'right':
                     print(f'Gaze: ', datetime.now().strftime('%H:%M:%S'), gaze)
+                    if django_enabled:
+                        now_utc = datetime.now(pytz.utc)
+                        now_eastern = now_utc.astimezone(pytz.timezone('America/New_York'))
+                        encoded_image = encode_image_to_base64(image)
+                        data = {
+                            'session_id': session_id,
+                            'user_id': 'user123',
+                            'detection_type': 'gaze ' + gaze,
+                            'timestamp': now_eastern.strftime('%Y-%m-%dT%H:%M:%S'),
+                            'aspect_ratio': yaw, 
+                            'image': encoded_image
+                        }
+                        response = requests.post('http://127.0.0.1:8000/api/detections/', json=data)
+                        if response.status_code == 201:
+                            print("Gaze data successfully sent to Django")
 
             # Display the aspect ratios on the image
             if drowsiness_enabled:
@@ -303,7 +349,7 @@ def main():
         '--numFaces',
         help='Max number of faces that can be detected by the landmarker.',
         required=False,
-        default=1)
+        default=2)
     parser.add_argument(
         '--minFaceDetectionConfidence',
         help='The minimum confidence score for face detection to be considered '
@@ -386,6 +432,13 @@ def main():
         required=False,
         default=False
     )
+    parser.add_argument(
+        '--disableDjango',
+        help='Enable Django server.',
+        action='store_true',
+        required=False,
+        default=False
+    )
     args = parser.parse_args()
 
     run(args.face_model, int(args.numFaces), args.minFaceDetectionConfidence,
@@ -393,7 +446,8 @@ def main():
         args.hand_model, int(args.numHands), args.minHandDetectionConfidence,
         args.minHandPresenceConfidence,
         int(args.cameraId), args.frameWidth, args.frameHeight,
-        not args.disableDrowsiness, not args.disableGaze, not args.disablePhone, not args.disableHand)
+        not args.disableDrowsiness, not args.disableGaze, not args.disablePhone, not args.disableHand,
+        not args.disableDjango)
 
 
 if __name__ == '__main__':

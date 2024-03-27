@@ -1,0 +1,37 @@
+.detection-table {
+    width: 40%; /* Adjust this value for the table size */
+    /* margin: 0 auto; Center the table on the page */
+    margin-left: 20px;
+    font-size: 20px; /* Increase the font size for better readability */
+    border-collapse: collapse;
+}
+
+.detection-table th, .detection-table td {
+    padding: 8px; /* Add padding for inside cells */
+    border: 1px solid #ddd; /* Add borders around cells */
+    text-align: left;
+}
+
+.detection-table th {
+    background-color: black;
+}
+
+h2 {
+    margin-left: 7vw;
+    text-align: left;
+    font-size: 30px;
+}
+
+h1 {
+    margin-top: 20px;
+}
+
+/* Positioning the chart container absolutely */
+.chart-container {
+    position: absolute;
+    right: 100px;
+    top: 300px;
+    width: 600px; 
+    height: 600px;
+  }
+

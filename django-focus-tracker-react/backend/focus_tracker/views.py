@@ -5,12 +5,21 @@ from .models import DetectionEvent, Session
 from .serializers import DetectionEventSerializer
 from django.shortcuts import get_list_or_404
 from rest_framework import status
+from django.core.files.base import ContentFile
+import base64
+from django.utils.timezone import now
 
 class DetectionEventView(APIView):
     def post(self, request, format=None):
         print("Received POST data:", request.data)
+        # Decode image if present
+        if 'image' in request.data:
+            imgstr = request.data['image']  # Direct base64 data
+            filename = f"{now().strftime('%Y%m%d%H%M%S')}.jpg"
+            data = ContentFile(base64.b64decode(imgstr), name=filename)
+            request.data['image'] = data
 
-        serializer = DetectionEventSerializer(data=request.data)
+        serializer = DetectionEventSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             # print the validated data
@@ -35,14 +44,14 @@ class CurrentSessionView(APIView):
             return Response({'status': 'error', 'message': 'No sessions available'}, status=404)
 
 
-class YawningDataView(APIView):
+class DetectionDataView(APIView):
     def get(self, request, *args, **kwargs):
         session_id = request.query_params.get('session_id')
         # print("HERE" + str(session_id))
         if session_id:
-            yawning_data = DetectionEvent.objects.filter(session_id=session_id, detection_type='yawn').order_by('-timestamp')
+            detection_data = DetectionEvent.objects.filter(session_id=session_id).order_by('-timestamp')
         else:
-            yawning_data = get_list_or_404(DetectionEvent, detection_type='yawn')
-        serializer = DetectionEventSerializer(yawning_data, many=True)
+            detection_data = get_list_or_404(DetectionEvent)
+        serializer = DetectionEventSerializer(detection_data, many=True)
         return Response(serializer.data)
     

@@ -6,6 +6,7 @@ eeg_headset/data_collection/test/
 eeg_headset/data_collection/train/
 eeg_headset/data_collection/valid/
 phone_detector/my_model/datasets
+django-focus-tracker-react/backend/media/
 **/.DS_Store
 **/__pycache__
 db.sqlite3

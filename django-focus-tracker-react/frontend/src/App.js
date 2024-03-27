@@ -5,7 +5,8 @@ import Chart from "./Chart";
 import PChart from "./PieChart";
 import LChart from "./LineChart";
 // import WebcamStream from './WebcamStream';
-import YawningData from './YawningInfo';
+import DetectionData from './DetectionInfo';
+import CalibrationPage from './CalibrationPage';
 
 function App() {
   return (
@@ -14,7 +15,8 @@ function App() {
         <Header />
         <Routes> {/* Use Routes instead of Switch */}
           <Route path="/" element={<MainContent />} />
-          <Route path="/yawning-info" element={<YawningData />} />
+          <Route path="/calibration-page" element={<CalibrationPage />} />
+          <Route path="/detection-info" element={<DetectionData />} />
         </Routes>
       </div>
     </Router>
@@ -43,7 +45,7 @@ function MainContent() {
       <div className="intro">
         <p>This App enables users to measure their focus and associated distractions during <br></br>work sessions to help them identify actionable steps to improve their productivity.</p>
         <br></br>
-        <Link to="/yawning-info"><button className="get-started">Get Started</button></Link>
+        <Link to="/calibration-page"><button className="get-started">Get Started</button></Link>
       </div>
       <div className="charts-container">
         <div className="chart">
