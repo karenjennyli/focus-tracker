@@ -35,7 +35,7 @@ function DetectionData() {
                 .catch(error => console.error('Error fetching distraction data:', error));
         };
 
-        const intervalId = setInterval(fetchDetectionData, 1000); // Poll every 1000 milliseconds (1 second)
+        const intervalId = setInterval(fetchDetectionData, 500); // Poll every 500 milliseconds (0.5 second)
 
         return () => clearInterval(intervalId); // Cleanup interval on unmount
     }, [sessionId]); // Rerun this effect if sessionId changes
@@ -100,7 +100,11 @@ function DetectionData() {
                 type: 'time',
                 time: {
                     unit: 'minute',
-                    tooltipFormat: 'HH:mm'
+                    tooltipFormat: 'h:mm',
+                    displayFormats: {
+                        minute: 'h:mm' // Apply the same format for axis labels
+                    },
+                    round: 'minute'
                 },
                 title: {
                     display: true,
