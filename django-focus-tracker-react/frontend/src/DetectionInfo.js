@@ -162,12 +162,35 @@ function DetectionData() {
             }
         }
     };
-    
 
+    const [timer, setTimer] = useState(0);
+
+    // Update the timer every second
+    useEffect(() => {
+        const intervalId = setInterval(() => {
+            setTimer(prevTimer => prevTimer + 1);
+        }, 1000);
+
+        // Cleanup interval on component unmount
+        return () => clearInterval(intervalId);
+    }, []);
+
+    // Format timer to HH:MM:SS
+    const formatTime = (seconds) => {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds - (hours * 3600)) / 60);
+        const sec = seconds - (hours * 3600) - (minutes * 60);
+
+        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+    };
+    
     return (
         <div>
             <div>
                 <h1>Current Session</h1>
+                <div className="timer-display">
+                    Session Length: {formatTime(timer)}
+                </div>
                 <h2>Real-Time Updates</h2>
                 {DetectionData.length > 0 ? (
                     <table className="detection-table">
