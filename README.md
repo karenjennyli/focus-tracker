@@ -18,7 +18,7 @@ Clone the repository to your local machine.
 git clone https://github.com/karenjennyli/focus-tracker.git
 ```
 
-Navigate to the project directory and install the required Python packages.
+Navigate to the project directory and install the required Python packages in a virtual environment.
 
 ```
 cd [path to focus-tracker]
@@ -52,8 +52,8 @@ Navigate to the backend directory. Set the environment variables for the Python 
 
 ```
 cd [path to focus-tracker]/django-focus-tracker-react/backend
-export SCRIPT_WORKING_DIR='[path to focus-tracker]/video_processing'
-export SCRIPT_PATH='[path to focus-tracker]/video_processing/run.py'
+export VENV_PATH='[path to virtual environment]'
+export FOCUS_TRACKER_DIR='[path to focus-tracker]'
 python3 manage.py runserver
 ```
 

@@ -62,15 +62,16 @@ class DetectionDataView(APIView):
 @csrf_exempt
 def StartCalibration(request):
     # Access environment variables
-    working_dir = os.environ.get('SCRIPT_WORKING_DIR')
-    script_path = os.environ.get('SCRIPT_PATH')
-    # working_dir = '/Users/arnavarora/Documents/focus-tracker/video_processing'
-    # script_path = '/Users/arnavarora/Documents/focus-tracker/video_processing/run.py'
+    venv_path = os.environ.get('VENV_PATH')
+    focus_tracker_dir = os.environ.get('FOCUS_TRACKER_DIR')
+    working_dir = focus_tracker_dir + '/video_processing'
+    script_path = focus_tracker_dir + '/video_processing/run.py'
     if not working_dir or not script_path:
         return JsonResponse({"error": "Environment variables for script path or working directory not set"}, status=500)
 
     try:
-        subprocess.Popen(['python', script_path], cwd=working_dir)
+        command = f'''osascript -e 'tell app "Terminal" to do script "source {venv_path} && cd {working_dir} && python3 {script_path}"' '''
+        subprocess.Popen(command, shell=True)
         return JsonResponse({"message": "Calibration started successfully"}, status=200)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
