@@ -48,10 +48,12 @@ cd [path to focus-tracker]/django-focus-tracker-react/frontend
 npm start
 ```
 
-Navigate to the backend directory and run the following command. This will start the Django server.
+Navigate to the backend directory. Set the environment variables for the Python backend scripts, then run the server.
 
 ```
 cd [path to focus-tracker]/django-focus-tracker-react/backend
+export SCRIPT_WORKING_DIR='[path to focus-tracker]/video_processing'
+export SCRIPT_PATH='[path to focus-tracker]/video_processing/run.py'
 python3 manage.py runserver
 ```
 
