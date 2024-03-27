@@ -38,7 +38,7 @@ class Subcribe():
         self.c.bind(create_session_done=self.on_create_session_done)
         self.c.bind(new_data_labels=self.on_new_data_labels)
         self.c.bind(new_eeg_data=self.on_new_eeg_data)
-        self.c.bind(new_mot_data=self.on_new_mot_data)
+        # self.c.bind(new_mot_data=self.on_new_mot_data)
         self.c.bind(new_dev_data=self.on_new_dev_data)
         self.c.bind(new_met_data=self.on_new_met_data)
         self.c.bind(new_pow_data=self.on_new_pow_data)
