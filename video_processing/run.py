@@ -102,7 +102,7 @@ def calibrate_face(cap: cv2.VideoCapture, face_landmarker: vision.FaceLandmarker
     # Calculate the thresholds for the eye aspect ratio and mouth aspect ratio
     ear_threshold = np.mean(eye_close_ear_values) + np.mean(eye_close_ear_values) * 0.25
     ear_threshold = (ear_threshold - neutral_ear_mean) / neutral_ear_std
-    mar_threshold = np.mean(yawn_mar_values) - np.mean(yawn_mar_values) * 0.1
+    mar_threshold = np.mean(yawn_mar_values) - np.mean(yawn_mar_values) * 0.25
     mar_threshold = (mar_threshold - neutral_mar_mean) / neutral_mar_std
 
     # Return the mean and standard deviation of the aspect ratios
