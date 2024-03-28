@@ -2,7 +2,7 @@
 
 # Activate virtual environment
 echo "Activating virtual environment..."
-source "$FOCUS_VENV_PATH"
+source "$VENV_PATH"
 
 # Install frontend dependencies
 echo "Installing frontend dependencies..."

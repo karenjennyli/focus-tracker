@@ -65,6 +65,37 @@ python3 run.py
 
 To access the application, open your web browser and go to [http://localhost:3000/](http://localhost:3000/).
 
+## Developing
+
+Set environment variables.
+```
+export FOCUS_TRACKER_DIR='[path to focus-tracker]'
+export BACKEND_DIR='$FOCUS_TRACKER_DIR/django-focus-tracker-react/backend'
+export FRONTEND_DIR='$FOCUS_TRACKER_DIR/django-focus-tracker-react/frontend'
+export VIDEO_PROCESSING_DIR='$FOCUS_TRACKER_DIR/video_processing'
+export VENV_PATH='[path to virtual environment]'
+```
+
+Run the setup script.
+```
+cd $FOCUS_TRACKER_DIR
+./setup.sh
+```
+
+Run the backend server.
+```
+cd $BACKEND_DIR
+python3 manage.py runserver
+```
+
+Run the frontend server.
+```
+cd $FRONTEND_DIR
+npm start
+```
+
+Open the application in your web browser at [http://localhost:3000/](http://localhost:3000/).
+
 ## Built With
 
 * [React](https://reactjs.org/)
