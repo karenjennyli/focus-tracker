@@ -117,21 +117,6 @@ def run(face_model: str, num_faces: int,
         _, buffer = cv2.imencode('.jpg', image)
         return base64.b64encode(buffer).decode()
 
-    # Wait for the user to press the space bar to start the program
-    while True:
-        success, image = cap.read()
-        if not success:
-            sys.exit(
-                'ERROR: Unable to read from webcam. Please verify your webcam settings.'
-            )
-
-        image = cv2.flip(image, 1)
-        current_frame = image
-        cv2.putText(current_frame, 'Press the space bar to start the program.', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-        show_in_window('video_processing', current_frame)
-        if cv2.waitKey(1) == 32:
-            break
-
     # Continuously capture images from the camera and run inference
     while cap.isOpened():
         success, image = cap.read()

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 import './DetectionData.css';
 import { Scatter } from 'react-chartjs-2';
 import 'chart.js/auto';
@@ -20,6 +21,18 @@ function DetectionData() {
                 setSessionId(data.session_id); // Update the sessionId state
                 console.log(data);
             });
+
+        // Function to call the Django backend
+        async function startDetection() {
+            try {
+              await axios.post('http://127.0.0.1:8000/api/start_detection/');
+              console.log('Detection started');
+            } catch (error) {
+              console.error('Error starting detection:', error);
+            }
+          }
+      
+          startDetection();
     }, []); // Empty array means this runs once on component mount
 
     useEffect(() => {

@@ -65,6 +65,23 @@ def StartCalibration(request):
     venv_path = os.environ.get('VENV_PATH')
     focus_tracker_dir = os.environ.get('FOCUS_TRACKER_DIR')
     working_dir = focus_tracker_dir + '/video_processing'
+    script_path = focus_tracker_dir + '/video_processing/calibrate.py'
+    if not venv_path or not focus_tracker_dir or not working_dir or not script_path:
+        return JsonResponse({"error": "Environment variables for script path or working directory not set"}, status=500)
+
+    try:
+        command = f'''osascript -e 'tell app "Terminal" to do script "source {venv_path} && cd {working_dir} && python3 {script_path}"' '''
+        subprocess.Popen(command, shell=True)
+        return JsonResponse({"message": "Calibration started successfully"}, status=200)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+@csrf_exempt
+def StartDetection(request):
+    # Access environment variables
+    venv_path = os.environ.get('VENV_PATH')
+    focus_tracker_dir = os.environ.get('FOCUS_TRACKER_DIR')
+    working_dir = focus_tracker_dir + '/video_processing'
     script_path = focus_tracker_dir + '/video_processing/run.py'
     if not venv_path or not focus_tracker_dir or not working_dir or not script_path:
         return JsonResponse({"error": "Environment variables for script path or working directory not set"}, status=500)
@@ -75,4 +92,3 @@ def StartCalibration(request):
         return JsonResponse({"message": "Calibration started successfully"}, status=200)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
-    
