@@ -164,12 +164,22 @@ def run(face_model: str, num_faces: int,
                     'session_id': session_id,
                 }
                 resp = requests.post('http://127.0.0.1:8000/api/current_session', json=current_session_data)
-                # if resp.status_code == 201:
-                #         print("Current_session data successfully sent to Django")
 
             people_detected = people_detector.detect_people(FACE_DETECTION_RESULT.face_landmarks)
             if people_detected:
                 print(f'Other people detected: ', datetime.now().strftime('%H:%M:%S'))
+                if django_enabled:
+                    encode_image = encode_image_to_base64(image)
+                    data = {
+                        'session_id': session_id,
+                        'user_id': 'user123',
+                        'detection_type': 'other_people',
+                        'timestamp': datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
+                        'image': encode_image
+                    }
+                    response = requests.post('http://127.0.0.1:8000/api/detections/', json=data)
+                    if response.status_code == 201:
+                        print("People data successfully sent to Django")
 
             face_landmarks = FACE_DETECTION_RESULT.face_landmarks[0]
 
@@ -184,7 +194,6 @@ def run(face_model: str, num_faces: int,
                             'user_id': 'user123',
                             'detection_type': 'yawn',
                             'timestamp': datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
-                            'aspect_ratio': mar,  # Mouth Aspect Ratio for yawn detection
                             'image': encoded_image
                         }
                         response = requests.post('http://127.0.0.1:8000/api/detections/', json=data)
@@ -201,7 +210,6 @@ def run(face_model: str, num_faces: int,
                             'user_id': 'user123',
                             'detection_type': 'sleep',
                             'timestamp': datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
-                            'aspect_ratio': ear, 
                             'image': encoded_image
                         }
                         response = requests.post('http://127.0.0.1:8000/api/detections/', json=data)
@@ -219,7 +227,6 @@ def run(face_model: str, num_faces: int,
                             'user_id': 'user123',
                             'detection_type': 'gaze ' + gaze,
                             'timestamp': datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
-                            'aspect_ratio': yaw, 
                             'image': encoded_image
                         }
                         response = requests.post('http://127.0.0.1:8000/api/detections/', json=data)
@@ -250,6 +257,18 @@ def run(face_model: str, num_faces: int,
             if phone_detected:
                 print(f'Phone: ', datetime.now().strftime('%H:%M:%S'))
                 current_frame = annotated_image
+                if django_enabled:
+                    encoded_image = encode_image_to_base64(image)
+                    data = {
+                        'session_id': session_id,
+                        'user_id': 'user123',
+                        'detection_type': 'phone_use',
+                        'timestamp': datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
+                        'image': encoded_image
+                    }
+                    response = requests.post('http://127.0.0.1:8000/api/detections/', json=data)
+                    if response.status_code == 201:
+                        print("Phone data successfully sent to Django")
 
         if not hide_window:
             show_in_window('video_processing', current_frame)
