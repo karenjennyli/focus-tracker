@@ -134,7 +134,7 @@ def calibrate(face_model: str, num_faces: int,
     ear_mean, ear_std, ear_threshold, mar_mean, mar_std, mar_threshold = calibrate_face(cap, face_landmarker, width, height)
     print(f'EAR threshold: {ear_threshold}, MAR threshold: {mar_threshold}')
     # save the calibration data to a file
-    with open('calibration_data.csv', 'w') as f:
+    with open('drowsiness_thresholds.csv', 'w') as f:
         f.write(f'ear_mean,ear_std,ear_threshold,mar_mean,mar_std,mar_threshold\n')
         f.write(f'{ear_mean},{ear_std},{ear_threshold},{mar_mean},{mar_std},{mar_threshold}\n')
 

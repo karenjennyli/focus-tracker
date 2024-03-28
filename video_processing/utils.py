@@ -1,5 +1,6 @@
 import time
 import cv2
+import os
 import numpy as np
 import mediapipe as mp
 from mediapipe.tasks.python import vision
@@ -104,6 +105,14 @@ def eye_aspect_ratio(face_landmarks: landmark_pb2.NormalizedLandmarkList) -> flo
     return (left_ear + right_ear) / 2.0
 
 
+def get_drowsiness_thresholds(file_path: str = 'drowsiness_thresholds.csv') -> tuple[float, float, float, float, float, float]:
+    dir = os.path.dirname(__file__)
+    file_path = os.path.join(dir, file_path)
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
+        return tuple(map(float, lines[1].split(',')))
+
+
 def draw_face_landmarks(current_frame: np.ndarray, face_landmarks: list[vision.FaceLandmarker]) -> None:
     face_landmarks_proto = landmark_pb2.NormalizedLandmarkList()
     face_landmarks_proto.landmark.extend([
@@ -141,3 +150,7 @@ def draw_hand_landmarks(current_frame: np.ndarray, hand_landmarks: list[landmark
             mp_drawing_styles.get_default_hand_landmarks_style(),
             mp_drawing_styles.get_default_hand_connections_style()
         )
+
+
+if __name__ == '__main__':
+    print(get_drowsiness_thresholds())
