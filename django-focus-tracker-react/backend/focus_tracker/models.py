@@ -10,7 +10,6 @@ class DetectionEvent(models.Model):
     user_id = models.CharField(max_length=255)
     detection_type = models.CharField(max_length=100)
     timestamp = models.DateTimeField(default=timezone.now)
-    aspect_ratio = models.FloatField()
     image = models.ImageField(upload_to='detectionimages/', null=True, blank=True)
 
     def __str__(self):
