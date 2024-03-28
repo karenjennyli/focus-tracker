@@ -12,8 +12,8 @@ import numpy as np
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 
-from utils import mouth_aspect_ratio, eye_aspect_ratio, draw_face_landmarks, draw_hand_landmarks, show_in_window
-from utils import CALIBRATION_TIME, YAWN_MIN_TIME, MICROSLEEP_MIN_TIME, GAZE_MIN_TIME, PHONE_MIN_TIME
+from utils import get_drowsiness_thresholds, draw_face_landmarks, draw_hand_landmarks, show_in_window
+from utils import YAWN_MIN_TIME, MICROSLEEP_MIN_TIME, GAZE_MIN_TIME, PHONE_MIN_TIME
 from utils import FPS_AVG_FRAME_COUNT, COUNTER, FPS, START_TIME
 from utils import FACE_DETECTION_RESULT, HAND_DETECTION_RESULT
 
@@ -39,73 +39,6 @@ COUNTER, FPS = 0, 0
 START_TIME = time.time()
 
 session_id = str(uuid.uuid4())
-
-
-def capture_face_landmarks(cap: cv2.VideoCapture, face_landmarker: vision.FaceLandmarker,
-                           calibration_time: int, width: int, height: int, calibration_message: str) -> list[tuple[float, float]]:
-    start_time = None
-    aspect_ratio_values = []
-
-    while cap.isOpened():
-        success, image = cap.read()
-        if not success:
-            sys.exit('ERROR: Unable to read from webcam. Please verify your webcam settings.')
-
-        image = cv2.flip(image, 1)
-        rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_image)
-        face_landmarker.detect_async(mp_image, time.time_ns() // 1_000_000)
-        current_frame = image
-
-        # Display the FPS on the image
-        cv2.putText(current_frame, 'FPS: {:.2f}'.format(FPS), (10, height - 400), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-
-        if FACE_DETECTION_RESULT and FACE_DETECTION_RESULT.face_landmarks:
-            draw_face_landmarks(current_frame, FACE_DETECTION_RESULT.face_landmarks[0])
-
-        if start_time is None:
-            cv2.putText(current_frame, calibration_message, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-            show_in_window('video_processing', current_frame)
-            if cv2.waitKey(1) == 32:
-                start_time = time.time()
-        else:
-            if FACE_DETECTION_RESULT and FACE_DETECTION_RESULT.face_landmarks:
-                ear = eye_aspect_ratio(FACE_DETECTION_RESULT.face_landmarks[0])
-                mar = mouth_aspect_ratio(FACE_DETECTION_RESULT.face_landmarks[0])
-                aspect_ratio_values.append((ear, mar))
-                draw_face_landmarks(current_frame, FACE_DETECTION_RESULT.face_landmarks[0])
-
-            cv2.putText(current_frame, 'Finished in: ' + str(calibration_time - int(time.time() - start_time)), (width // 2 - 100, height // 2 - 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-            show_in_window('video_processing', current_frame)
-            cv2.waitKey(1)
-
-            if time.time() - start_time >= calibration_time:
-                break
-
-    return aspect_ratio_values
-
-def calibrate_face(cap: cv2.VideoCapture, face_landmarker: vision.FaceLandmarker, width: int, height: int) -> tuple[float, float, float, float]:
-    neutral_face_message = f'Keep a neutral face with eyes open for {CALIBRATION_TIME} seconds. Press the space bar to start.'
-    neutral_ear_values, neutral_mar_values = zip(*capture_face_landmarks(cap, face_landmarker, CALIBRATION_TIME, width, height, neutral_face_message))
-
-    yawn_message = f'Yawn for {CALIBRATION_TIME} seconds. Press the space bar to start.'
-    _, yawn_mar_values = zip(*capture_face_landmarks(cap, face_landmarker, CALIBRATION_TIME, width, height, yawn_message))
-
-    eye_close_message = f'Close your eyes for {CALIBRATION_TIME} seconds. Press the space bar to start.'
-    eye_close_ear_values, _ = zip(*capture_face_landmarks(cap, face_landmarker, CALIBRATION_TIME, width, height, eye_close_message))
-
-    # Calculate the mean and standard deviation of the aspect ratios
-    neutral_ear_mean, neutral_ear_std = np.mean(neutral_ear_values), np.std(neutral_ear_values)
-    neutral_mar_mean, neutral_mar_std = np.mean(neutral_mar_values), np.std(neutral_mar_values)
-
-    # Calculate the thresholds for the eye aspect ratio and mouth aspect ratio
-    ear_threshold = np.mean(eye_close_ear_values) + np.mean(eye_close_ear_values) * 0.25
-    ear_threshold = (ear_threshold - neutral_ear_mean) / neutral_ear_std
-    mar_threshold = np.mean(yawn_mar_values) - np.mean(yawn_mar_values) * 0.25
-    mar_threshold = (mar_threshold - neutral_mar_mean) / neutral_mar_std
-
-    # Return the mean and standard deviation of the aspect ratios
-    return neutral_ear_mean, neutral_ear_std, ear_threshold, neutral_mar_mean, neutral_mar_std, mar_threshold
 
 
 def run(face_model: str, num_faces: int,
@@ -165,9 +98,9 @@ def run(face_model: str, num_faces: int,
         result_callback=save_hand_result)
     hand_landmarker = vision.HandLandmarker.create_from_options(options)
 
-    # Calibrate the eye aspect ratio and mouth aspect ratio thresholds
+    # Get thresholds from calibration data file
     if drowsiness_enabled:
-        ear_mean, ear_std, ear_threshold, mar_mean, mar_std, mar_threshold = calibrate_face(cap, face_landmarker, width, height)
+        ear_mean, ear_std, ear_threshold, mar_mean, mar_std, mar_threshold = get_drowsiness_thresholds()
         print(f'EAR threshold: {ear_threshold}, MAR threshold: {mar_threshold}')
 
     # Initialize detectors

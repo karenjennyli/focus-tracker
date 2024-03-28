@@ -10,3 +10,4 @@ django-focus-tracker-react/backend/media/
 **/.DS_Store
 **/__pycache__
 db.sqlite3
+.focus_env

@@ -66,7 +66,7 @@ def StartCalibration(request):
     focus_tracker_dir = os.environ.get('FOCUS_TRACKER_DIR')
     working_dir = focus_tracker_dir + '/video_processing'
     script_path = focus_tracker_dir + '/video_processing/run.py'
-    if not working_dir or not script_path:
+    if not venv_path or not focus_tracker_dir or not working_dir or not script_path:
         return JsonResponse({"error": "Environment variables for script path or working directory not set"}, status=500)
 
     try:
