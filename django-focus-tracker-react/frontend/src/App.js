@@ -7,6 +7,7 @@ import LChart from "./LineChart";
 // import WebcamStream from './WebcamStream';
 import DetectionData from './DetectionInfo';
 import CalibrationPage from './CalibrationPage';
+import SessionSummary from './SessionSummary';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
           <Route path="/" element={<MainContent />} />
           <Route path="/calibration-page" element={<CalibrationPage />} />
           <Route path="/detection-info" element={<DetectionData />} />
+          <Route path="/session-summary" element={<SessionSummary />} />
         </Routes>
       </div>
     </Router>

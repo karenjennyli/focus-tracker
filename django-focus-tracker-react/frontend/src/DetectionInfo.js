@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import './DetectionData.css';
+import { Link } from 'react-router-dom';
 import { Scatter } from 'react-chartjs-2';
 import 'chart.js/auto';
 import 'chartjs-adapter-moment';
@@ -224,6 +225,11 @@ function DetectionData() {
                 {DetectionData.length > 0 && (
                     <Scatter data={chartData} options={options}/>
                 )}
+            </div>
+            <div className="stop-fixed-bottom">
+                <Link to="/session-summary">
+                    <button className="stop-button"></button>
+                </Link>
             </div>
         </div>
     );
