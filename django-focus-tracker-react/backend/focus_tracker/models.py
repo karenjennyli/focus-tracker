@@ -12,6 +12,7 @@ class DetectionEvent(models.Model):
     timestamp = models.DateTimeField(default=timezone.now)
     aspect_ratio = models.FloatField()
     image = models.ImageField(upload_to='detectionimages/', null=True, blank=True)
+    frequency = models.IntegerField(default=0)
 
     def __str__(self):
         return f"{self.user_id} - {self.detection_type} at {self.timestamp}"

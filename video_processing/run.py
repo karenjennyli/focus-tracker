@@ -198,7 +198,11 @@ def run(face_model: str, num_faces: int,
         show_in_window('video_processing', current_frame)
         if cv2.waitKey(1) == 32:
             break
-
+    
+    # Initialize the detection frequencies before entering the while cap.isOpened() loop 
+    yawn_freq = 0
+    sleep_freq = 0
+    gaze_freq = 0
     # Continuously capture images from the camera and run inference
     while cap.isOpened():
         success, image = cap.read()
@@ -239,11 +243,11 @@ def run(face_model: str, num_faces: int,
                 print(f'Other people detected: ', datetime.now().strftime('%H:%M:%S'))
 
             face_landmarks = FACE_DETECTION_RESULT.face_landmarks[0]
-
             if drowsiness_enabled:
                 yawn_detected, mar = yawn_detector.detect_yawn(face_landmarks)
                 if yawn_detected:
                     print(f'Yawn: ', datetime.now().strftime('%Y-%m-%dT%H:%M:%S'), 'MAR: ', mar)
+                    yawn_freq += 1
                     if django_enabled:
                         encoded_image = encode_image_to_base64(image)
                         data = {
@@ -252,7 +256,8 @@ def run(face_model: str, num_faces: int,
                             'detection_type': 'yawn',
                             'timestamp': datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
                             'aspect_ratio': mar,  # Mouth Aspect Ratio for yawn detection
-                            'image': encoded_image
+                            'image': encoded_image,
+                            "frequency": yawn_freq
                         }
                         response = requests.post('http://127.0.0.1:8000/api/detections/', json=data)
                         if response.status_code == 201:
@@ -261,6 +266,7 @@ def run(face_model: str, num_faces: int,
                 microsleep_detected, ear = microsleep_detector.detect_microsleep(face_landmarks)
                 if microsleep_detected:
                     print(f'Microsleep: ', datetime.now().strftime('%H:%M:%S'), 'EAR: ', ear)
+                    sleep_freq += 1
                     if django_enabled:
                         encoded_image = encode_image_to_base64(image)
                         data = {
@@ -269,7 +275,8 @@ def run(face_model: str, num_faces: int,
                             'detection_type': 'sleep',
                             'timestamp': datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
                             'aspect_ratio': ear, 
-                            'image': encoded_image
+                            'image': encoded_image,
+                            "frequency": sleep_freq
                         }
                         response = requests.post('http://127.0.0.1:8000/api/detections/', json=data)
                         if response.status_code == 201:
@@ -279,6 +286,7 @@ def run(face_model: str, num_faces: int,
                 gaze, pitch, yaw, roll = gaze_detector.detect_gaze(face_landmarks)
                 if gaze == 'left' or gaze == 'right':
                     print(f'Gaze: ', datetime.now().strftime('%H:%M:%S'), gaze)
+                    gaze_freq += 1
                     if django_enabled:
                         encoded_image = encode_image_to_base64(image)
                         data = {
@@ -287,7 +295,8 @@ def run(face_model: str, num_faces: int,
                             'detection_type': 'gaze ' + gaze,
                             'timestamp': datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
                             'aspect_ratio': yaw, 
-                            'image': encoded_image
+                            'image': encoded_image,
+                            "frequency": gaze_freq
                         }
                         response = requests.post('http://127.0.0.1:8000/api/detections/', json=data)
                         if response.status_code == 201:
