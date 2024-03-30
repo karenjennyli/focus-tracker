@@ -1,4 +1,6 @@
+from datetime import datetime
 from cortex import Cortex
+import requests
 
 class Subcribe():
     """
@@ -38,7 +40,7 @@ class Subcribe():
         self.c.bind(create_session_done=self.on_create_session_done)
         self.c.bind(new_data_labels=self.on_new_data_labels)
         self.c.bind(new_eeg_data=self.on_new_eeg_data)
-        # self.c.bind(new_mot_data=self.on_new_mot_data)
+        self.c.bind(new_mot_data=self.on_new_mot_data)
         self.c.bind(new_dev_data=self.on_new_dev_data)
         self.c.bind(new_met_data=self.on_new_met_data)
         self.c.bind(new_pow_data=self.on_new_pow_data)
@@ -184,7 +186,22 @@ class Subcribe():
              The values in the array met match the labels in the array labels return at on_new_data_labels
         For example: {'met': [True, 0.5, True, 0.5, 0.0, True, 0.5, True, 0.5, True, 0.5, True, 0.5], 'time': 1627459390.4229}
         """
+        print('received met data')
+        # print kwargs keys
+        print(kwargs.keys())
+        print(kwargs.get('met'))
         data = kwargs.get('data')
+        print(data)
+        if data['met'][-2] == True:
+            data = {
+                'timestamp_epoch': data['time'],
+                'timestamp_formatted': datetime.fromtimestamp(data['time']).strftime('%H:%M:%S'),
+                'focus_pm': data['met'][-1]
+            }
+            response = requests.post('http://127.0.0.1:8000/api/eeg_data', json=data)
+            if response.status_code == 201:
+                print("EEG Focus PM data successfully sent to Django")
+        
         print('pm data: {}'.format(data))
 
     def on_new_pow_data(self, *args, **kwargs):
@@ -233,7 +250,7 @@ def main():
     s = Subcribe(your_app_client_id, your_app_client_secret)
 
     # list data streams
-    streams = ['dev','eq','met','pow']
+    streams = ['dev','eq','met']
     s.start(streams)
 
 if __name__ =='__main__':

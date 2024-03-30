@@ -1,8 +1,8 @@
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import DetectionEvent, Session
-from .serializers import DetectionEventSerializer
+from .models import DetectionEvent, Session, EEGEvent
+from .serializers import DetectionEventSerializer, EEGEventSerializer
 from django.shortcuts import get_list_or_404
 from rest_framework import status
 from django.core.files.base import ContentFile
@@ -76,3 +76,22 @@ def StartCalibration(request):
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
     
+    
+class EEGDataView(APIView):
+    def post(self, request, format=None):
+        print("Received POST data:", request.data)
+        serializer = EEGEventSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            # print the validated data
+            # print("Saved DetectionEvent:", serializer.validated_data)
+            return Response(serializer.data, status=201)
+        else:
+            print("not valid")
+
+        print(serializer.data)
+        return Response(serializer.errors, status=400)
+    def get(self, request, *args, **kwargs):
+        eeg_data = EEGEvent.objects.order_by('-timestamp_formatted')
+        serializer = EEGEventSerializer(eeg_data, many=True)
+        return Response(serializer.data)
