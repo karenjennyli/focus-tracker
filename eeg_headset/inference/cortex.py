@@ -66,7 +66,7 @@ class Cortex(Dispatcher):
                 'mc_training_threshold_done', 'create_record_done', 'stop_record_done','warn_cortex_stop_all_sub', 
                 'inject_marker_done', 'update_marker_done', 'export_record_done', 'new_data_labels', 
                 'new_com_data', 'new_fe_data', 'new_eeg_data', 'new_mot_data', 'new_dev_data', 
-                'new_met_data', 'new_pow_data', 'new_sys_data']
+                'new_met_data', 'new_pow_data', 'new_sys_data', 'new_eq_data']
     def __init__(self, client_id, client_secret, debug_mode=False, **kwargs):
         
         self.session_id = ''
@@ -388,6 +388,10 @@ class Cortex(Dispatcher):
         elif result_dic.get('sys') != None:
             sys_data = result_dic['sys']
             self.emit('new_sys_data', data=sys_data)
+        elif result_dic.get('eq') != None:
+            eq_data = {}
+            eq_data['eq'] = result_dic['eq']
+            self.emit('new_eq_data', data=eq_data)
         else :
             print(result_dic)
 

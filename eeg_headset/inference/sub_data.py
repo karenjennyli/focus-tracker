@@ -1,6 +1,24 @@
 from datetime import datetime
 from cortex import Cortex
+from joblib import load
 import requests
+import torch
+from torch import nn
+
+class NeuralNetwork(nn.Module):
+    def __init__(self, input_size, num_classes):
+        super(NeuralNetwork, self).__init__()
+        self.layer1 = nn.Linear(input_size, 128)
+        self.layer2 = nn.Linear(128, 64)
+        self.layer3 = nn.Linear(64, 32)
+        self.layer4 = nn.Linear(32, num_classes)
+        
+    def forward(self, x):
+        x = torch.relu(self.layer1(x))
+        x = torch.relu(self.layer2(x))
+        x = torch.relu(self.layer3(x))
+        x = self.layer4(x)  # Output layer, no activation here
+        return x
 
 class Subcribe():
     """
@@ -37,6 +55,14 @@ class Subcribe():
         """
         print("Subscribe __init__")
         self.c = Cortex(app_client_id, app_client_secret, debug_mode=True, **kwargs)
+        self.eq = False
+        self.scaler = load('../neural_network/scaler.joblib')
+        input_size = 15
+        num_classes = 2
+        self.model = NeuralNetwork(input_size=input_size, num_classes=num_classes)
+        self.model.load_state_dict(torch.load('../neural_network/best_model_checkpoint.pth'))
+        self.model.eval()
+
         self.c.bind(create_session_done=self.on_create_session_done)
         self.c.bind(new_data_labels=self.on_new_data_labels)
         self.c.bind(new_eeg_data=self.on_new_eeg_data)
@@ -44,6 +70,7 @@ class Subcribe():
         self.c.bind(new_dev_data=self.on_new_dev_data)
         self.c.bind(new_met_data=self.on_new_met_data)
         self.c.bind(new_pow_data=self.on_new_pow_data)
+        self.c.bind(new_eq_data=self.on_new_eq_data)
         self.c.bind(inform_error=self.on_inform_error)
 
     def start(self, streams, headsetId=''):
@@ -214,8 +241,37 @@ class Subcribe():
              The values in the array pow match the labels in the array labels return at on_new_data_labels
         For example: {'pow': [5.251, 4.691, 3.195, 1.193, 0.282, 0.636, 0.929, 0.833, 0.347, 0.337, 7.863, 3.122, 2.243, 0.787, 0.496, 5.723, 2.87, 3.099, 0.91, 0.516, 5.783, 4.818, 2.393, 1.278, 0.213], 'time': 1627459390.1729}
         """
+        if self.eq == True:
+            # values to be passed into model ['POW.AF3.Theta', 'POW.AF3.Alpha', 'POW.AF3.BetaL', 'POW.AF3.BetaH', 'POW.AF3.Gamma', 'POW.AF4.Theta', 'POW.AF4.Alpha', 'POW.AF4.BetaL', 'POW.AF4.BetaH', 'POW.AF4.Gamma','POW.Pz.Theta', 'POW.Pz.Alpha', 'POW.Pz.BetaL', 'POW.Pz.BetaH', 'POW.Pz.Gamma']
+            # order of data in data.get('pow'): "AF3/theta","AF3/alpha","AF3/betaL","AF3/betaH","AF3/gamma", "T7/theta","T7/alpha","T7/betaL","T7/betaH","T7/gamma", "Pz/theta","Pz/alpha","Pz/betaL","Pz/betaH","Pz/gamma", "T8/theta","T8/alpha","T8/betaL","T8/betaH","T8/gamma", "AF4/theta","AF4/alpha","AF4/betaL","AF4/betaH","AF4/gamma"
+
+            data = kwargs.get('data')
+            input_features = data.get('pow')[0:5] + data.get('pow')[10:15] + data.get('pow')[20:25]
+
+            input_vector_scaled = self.scaler.transform([input_features])
+            input_tensor = torch.tensor(input_vector_scaled, dtype=torch.float32)
+
+            with torch.no_grad():
+                output = self.model(input_tensor)
+                _, predicted = torch.max(output, 1)
+
+            class_names = ['Not in Flow', 'Flow']
+            predicted_class = class_names[predicted.item()]
+
+            print(f"The input vector is classified as: {predicted_class}")
+
+        # data = kwargs.get('data')
+        # print('pow data: {}'.format(data))
+
+    def on_new_eq_data(self, *args, **kwargs):
+        # [battery percent, overall eeg quality, sample rate quality, AF3, T7, PZ, T8, AF4]
+        # if af3, af4, and pz are all 4, set self.eq to True
         data = kwargs.get('data')
-        print('pow data: {}'.format(data))
+        if data.get('eq')[-5] == 4 and data.get('eq')[-3] == 4 and data.get('eq')[-1] == 4:
+            self.eq = True
+        else:
+            self.eq = False
+
 
     # callbacks functions
     def on_create_session_done(self, *args, **kwargs):
@@ -250,7 +306,7 @@ def main():
     s = Subcribe(your_app_client_id, your_app_client_secret)
 
     # list data streams
-    streams = ['dev','eq','met']
+    streams = ['eq','met', 'pow']
     s.start(streams)
 
 if __name__ =='__main__':

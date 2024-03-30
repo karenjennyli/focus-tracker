@@ -1,3 +1,4 @@
+from joblib import dump
 import pandas as pd
 import torch
 from torch import nn
@@ -32,6 +33,7 @@ def load_dataset(csv_file, input_columns, label_column):
     
     scaler = StandardScaler()
     inputs = scaler.fit_transform(inputs)
+    dump(scaler, 'scaler.joblib')
     
     inputs = torch.tensor(inputs, dtype=torch.float32)
     labels = torch.tensor(labels, dtype=torch.long)  # Ensure labels are long type for CrossEntropyLoss
