@@ -16,17 +16,6 @@ class DetectionEvent(models.Model):
 
     def __str__(self):
         return f"{self.user_id} - {self.detection_type} at {self.timestamp}"
-
-class DetectionEvent(models.Model):
-    session_id = models.CharField(max_length=255, null=True)
-    user_id = models.CharField(max_length=255)
-    detection_type = models.CharField(max_length=100)
-    timestamp = models.DateTimeField(default=timezone.now)
-    aspect_ratio = models.FloatField()
-    image = models.ImageField(upload_to='detectionimages/', null=True, blank=True)
-
-    def __str__(self):
-        return f"{self.user_id} - {self.detection_type} at {self.timestamp}"
     
 class EEGEvent(models.Model):
     # Assuming 'timestamp_epoch' is a UNIX epoch time, store as an IntegerField
