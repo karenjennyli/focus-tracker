@@ -260,6 +260,15 @@ class Subcribe():
 
             print(f"The input vector is classified as: {predicted_class}")
 
+            data = {
+                'timestamp_epoch': data['time'],
+                'timestamp_formatted': datetime.fromtimestamp(data['time']).strftime('%H:%M:%S'),
+                'flow': predicted_class
+            }
+            response = requests.post('http://127.0.0.1:8000/api/flow_data', json=data)
+            if response.status_code == 201:
+                print("EEG Flow State data successfully sent to Django")
+
         # data = kwargs.get('data')
         # print('pow data: {}'.format(data))
 

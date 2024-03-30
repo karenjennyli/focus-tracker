@@ -37,3 +37,16 @@ class EEGEvent(models.Model):
     def __str__(self):
         # Customize the string representation of the model, for example:
         return f"Event at {self.timestamp_formatted}"
+    
+class FlowEvent(models.Model):
+    timestamp_epoch = models.FloatField(help_text="Epoch timestamp of the event")
+    timestamp_formatted = models.CharField(max_length=8, help_text="Formatted time as HH:MM:SS")
+
+    flow = models.CharField(max_length=20, help_text="Flow State (Not in Flow or Flow)", default="")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        # Customize the string representation of the model, for example:
+        return f"Event at {self.timestamp_formatted}"
