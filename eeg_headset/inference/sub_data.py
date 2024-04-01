@@ -63,6 +63,9 @@ class Subcribe():
         self.model.load_state_dict(torch.load('../neural_network/best_model_checkpoint.pth'))
         self.model.eval()
 
+        self.flowCount = 0
+        self.notInFlowCount = 0
+
         self.c.bind(create_session_done=self.on_create_session_done)
         self.c.bind(new_data_labels=self.on_new_data_labels)
         self.c.bind(new_eeg_data=self.on_new_eeg_data)
@@ -259,12 +262,20 @@ class Subcribe():
             predicted_class = class_names[predicted.item()]
 
             print(f"The input vector is classified as: {predicted_class}")
-
+            if predicted_class == 'Flow':
+                self.flowCount += 1
+            else:
+                self.notInFlowCount += 1
+            
             data = {
-                'timestamp_epoch': data['time'],
-                'timestamp_formatted': datetime.fromtimestamp(data['time']).strftime('%H:%M:%S'),
-                'flow': predicted_class
-            }
+                    'timestamp_epoch': data['time'],
+                    'timestamp_formatted': datetime.fromtimestamp(data['time']).strftime('%H:%M:%S'),
+                    'flow': predicted_class,
+                    'flowCount': self.flowCount,
+                    'notInFlowCount': self.notInFlowCount,
+                    'predictionSum': self.flowCount + self.notInFlowCount,
+                    'flowNotFlowRatio': self.flowCount / (self.flowCount + self.notInFlowCount)
+                }
             response = requests.post('http://127.0.0.1:8000/api/flow_data', json=data)
             if response.status_code == 201:
                 print("EEG Flow State data successfully sent to Django")
@@ -276,7 +287,7 @@ class Subcribe():
         # [battery percent, overall eeg quality, sample rate quality, AF3, T7, PZ, T8, AF4]
         # if af3, af4, and pz are all 4, set self.eq to True
         data = kwargs.get('data')
-        if data.get('eq')[-5] == 4 and data.get('eq')[-3] == 4 and data.get('eq')[-1] == 4:
+        if data.get('eq')[-5] >= 0 and data.get('eq')[-3] >= 0 and data.get('eq')[-1] >= 0:
             self.eq = True
         else:
             self.eq = False

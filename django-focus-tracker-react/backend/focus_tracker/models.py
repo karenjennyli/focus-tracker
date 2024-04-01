@@ -43,6 +43,10 @@ class FlowEvent(models.Model):
     timestamp_formatted = models.CharField(max_length=8, help_text="Formatted time as HH:MM:SS")
 
     flow = models.CharField(max_length=20, help_text="Flow State (Not in Flow or Flow)", default="")
+    flowCount = models.IntegerField(default=0)
+    notInFlowCount = models.IntegerField(default=0)
+    predictionSum = models.IntegerField(default=0)
+    flowNotFlowRatio = models.FloatField(default=0.0)
 
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
