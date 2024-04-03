@@ -42,7 +42,7 @@ session_id = str(uuid.uuid4())
 
 
 def capture_face_landmarks(cap: cv2.VideoCapture, face_landmarker: vision.FaceLandmarker,
-                           calibration_time: int, width: int, height: int, calibration_message: str) -> list[tuple[float, float]]:
+                           calibration_time: int, width: int, height: int, calibration_message: str, lock_window: bool) -> list[tuple[float, float]]:
     start_time = None
     aspect_ratio_values = []
 
@@ -65,7 +65,10 @@ def capture_face_landmarks(cap: cv2.VideoCapture, face_landmarker: vision.FaceLa
 
         if start_time is None:
             cv2.putText(current_frame, calibration_message, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-            show_in_window('video_processing', current_frame)
+            if lock_window:
+                show_in_window('video_processing', current_frame)
+            else:
+                cv2.imshow('video_processing', current_frame)
             if cv2.waitKey(1) == 32:
                 start_time = time.time()
         else:
@@ -84,15 +87,15 @@ def capture_face_landmarks(cap: cv2.VideoCapture, face_landmarker: vision.FaceLa
 
     return aspect_ratio_values
 
-def calibrate_face(cap: cv2.VideoCapture, face_landmarker: vision.FaceLandmarker, width: int, height: int) -> tuple[float, float, float, float]:
+def calibrate_face(cap: cv2.VideoCapture, face_landmarker: vision.FaceLandmarker, width: int, height: int, lock_window: bool) -> tuple[float, float, float, float]:
     neutral_face_message = f'Keep a neutral face with eyes open for {CALIBRATION_TIME} seconds. Press the space bar to start.'
-    neutral_ear_values, neutral_mar_values = zip(*capture_face_landmarks(cap, face_landmarker, CALIBRATION_TIME, width, height, neutral_face_message))
+    neutral_ear_values, neutral_mar_values = zip(*capture_face_landmarks(cap, face_landmarker, CALIBRATION_TIME, width, height, neutral_face_message, lock_window))
 
     yawn_message = f'Yawn for {CALIBRATION_TIME} seconds. Press the space bar to start.'
-    _, yawn_mar_values = zip(*capture_face_landmarks(cap, face_landmarker, CALIBRATION_TIME, width, height, yawn_message))
+    _, yawn_mar_values = zip(*capture_face_landmarks(cap, face_landmarker, CALIBRATION_TIME, width, height, yawn_message, lock_window))
 
     eye_close_message = f'Close your eyes for {CALIBRATION_TIME} seconds. Press the space bar to start.'
-    eye_close_ear_values, _ = zip(*capture_face_landmarks(cap, face_landmarker, CALIBRATION_TIME, width, height, eye_close_message))
+    eye_close_ear_values, _ = zip(*capture_face_landmarks(cap, face_landmarker, CALIBRATION_TIME, width, height, eye_close_message, lock_window))
 
     # Calculate the mean and standard deviation of the aspect ratios
     neutral_ear_mean, neutral_ear_std = np.mean(neutral_ear_values), np.std(neutral_ear_values)
@@ -116,7 +119,7 @@ def run(face_model: str, num_faces: int,
         min_hand_presence_confidence: float,
         camera_id: int, width: int, height: int,
         drowsiness_enabled: bool, gaze_enabled: bool, phone_enabled: bool, hand_enabled: bool,
-        django_enabled: bool, hide_window: bool) -> None:
+        django_enabled: bool, hide_window: bool, lock_window: bool) -> None:
 
     # Start capturing video input from the camera
     cap = cv2.VideoCapture(camera_id)
@@ -167,7 +170,7 @@ def run(face_model: str, num_faces: int,
 
     # Calibrate the eye aspect ratio and mouth aspect ratio thresholds
     if drowsiness_enabled:
-        ear_mean, ear_std, ear_threshold, mar_mean, mar_std, mar_threshold = calibrate_face(cap, face_landmarker, width, height)
+        ear_mean, ear_std, ear_threshold, mar_mean, mar_std, mar_threshold = calibrate_face(cap, face_landmarker, width, height, lock_window)
         print(f'EAR threshold: {ear_threshold}, MAR threshold: {mar_threshold}')
 
     # Initialize detectors
@@ -480,6 +483,13 @@ def main():
         required=False,
         default=False
     )
+    parser.add_argument(
+        '--lockWindow',
+        help='Lock the window.',
+        action='store_true',
+        required=False,
+        default=False
+    )
     args = parser.parse_args()
 
     run(args.face_model, int(args.numFaces), args.minFaceDetectionConfidence,
@@ -488,7 +498,7 @@ def main():
         args.minHandPresenceConfidence,
         int(args.cameraId), args.frameWidth, args.frameHeight,
         not args.disableDrowsiness, not args.disableGaze, not args.disablePhone, not args.disableHand,
-        not args.disableDjango, args.hideWindow)
+        not args.disableDjango, args.hideWindow, args.lockWindow)
 
 
 if __name__ == '__main__':
