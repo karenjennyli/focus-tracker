@@ -1,8 +1,9 @@
-# https://github.com/googlesamples/mediapipe/blob/main/examples/face_landmarker/raspberry_pi/detect.py
+    # https://github.com/googlesamples/mediapipe/blob/main/examples/face_landmarker/raspberry_pi/detect.py
 
 import argparse
 import sys
 import time
+from datetime import datetime
 
 import cv2
 import mediapipe as mp
@@ -99,6 +100,31 @@ def graph_distance(img1_representation, img2_representation, current_distance, t
 
     plt.show()
 
+def get_template_face():
+    # take a picture of the user and save to dataset/current_user.jpg
+    # wait for user to press space key to take picture
+    cap = cv2.VideoCapture(0)
+    while cap.isOpened():
+        success, image = cap.read()
+        if not success:
+            sys.exit('ERROR: Unable to read from webcam. Please verify your webcam settings.')
+
+        image = cv2.flip(image, 1)
+        current_frame = image
+
+        # write on frame to press space key to take picture and start program
+        cv2.putText(current_frame, 'Press space key to take picture', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        cv2.imshow('face_landmarker', current_frame)
+
+        # save the image if the space key is pressed
+        if cv2.waitKey(1) == 32:
+            cv2.imwrite('dataset/current_user.jpg', image)
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
+
+
 def run(model: str, num_faces: int,
         min_face_detection_confidence: float,
         min_face_presence_confidence: float, min_tracking_confidence: float,
@@ -118,6 +144,7 @@ def run(model: str, num_faces: int,
       width: The width of the frame captured from the camera.
       height: The height of the frame captured from the camera.
   '''
+    get_template_face()
 
     # Start capturing video input from the camera
     cap = cv2.VideoCapture(camera_id)
@@ -131,6 +158,7 @@ def run(model: str, num_faces: int,
         # Calculate the FPS
         if COUNTER % FPS_AVG_FRAME_COUNT == 0:
             FPS = FPS_AVG_FRAME_COUNT / (time.time() - START_TIME)
+            # print('FPS:', FPS)
             START_TIME = time.time()
 
         DETECTION_RESULT = result
@@ -155,6 +183,7 @@ def run(model: str, num_faces: int,
 
     # Get template face image
     template = cv2.imread('dataset/karen3.jpg')
+    template = cv2.imread('dataset/current_user.jpg')
     template = cv2.flip(template, 1)
     template = np.array(template)
     template_faces = DeepFace.extract_faces(template, target_size=target_size, detector_backend=DETECTOR_BACKEND, enforce_detection=False)
@@ -182,9 +211,6 @@ def run(model: str, num_faces: int,
         rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_image)
         detector.detect_async(mp_image, time.time_ns() // 1_000_000)
-        
-        # Display the FPS on the image
-        cv2.putText(current_frame, 'FPS: {:.2f}'.format(FPS), (10, height - 400), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
         # Image width and height
         img_height, img_width, _ = current_frame.shape
@@ -223,20 +249,25 @@ def run(model: str, num_faces: int,
             face = current_frame[top:bottom, left:right]
             face = np.array(face)
             faces = DeepFace.extract_faces(face, target_size=target_size, detector_backend=DETECTOR_BACKEND, enforce_detection=False)
+            # import pdb; pdb.set_trace()
 
             if len(faces) == 0:
                 print("No face detected")
-                continue
             else:
                 face = faces[0]["face"]
-            face = np.expand_dims(face, axis=0)  # to (1, 224, 224, 3)
-            face_embedding = recognition_model.find_embeddings(face)
-            face_embedding = np.array(face_embedding)
+                face = np.expand_dims(face, axis=0)  # to (1, 224, 224, 3)
+                face_embedding = recognition_model.find_embeddings(face)
+                face_embedding = np.array(face_embedding)
 
-            # compute the distance between the embeddings
-            distance = verification.find_distance(face_embedding, template_embedding, distance_metric=DISTANCE_METRIC)
+                # compute the distance between the embeddings
+                distance = verification.find_distance(face_embedding, template_embedding, distance_metric=DISTANCE_METRIC)
+                if distance < threshold:
+                    print(f'User recognized: ', datetime.now().strftime('%H:%M:%S'))
+                else:
+                    print(f'User not recognized: ', datetime.now().strftime('%H:%M:%S'))
+                # print(distance < threshold, distance, threshold, time.time() - start_time)
 
-            graph_distance(template_embedding, face_embedding, distance, threshold, template, face, time.time() - start_time)
+                # graph_distance(template_embedding, face_embedding, distance, threshold, template, face, time.time() - start_time)
             
             # draw the bounding box around the face
             cv2.line(current_frame, top_left, top_right, (0, 255, 0), 2)
@@ -245,6 +276,9 @@ def run(model: str, num_faces: int,
             cv2.line(current_frame, top_right, bottom_right, (0, 255, 0), 2)
             draw_face_landmarks(current_frame, face_landmarks)
 
+            # Display the FPS on the image
+
+        cv2.putText(current_frame, 'FPS: {:.2f}'.format(FPS), (10, height - 400), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
         cv2.imshow('face_landmarker', current_frame)
 
         # Stop the program if the ESC key is pressed.
