@@ -12,8 +12,8 @@ import numpy as np
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 
-from utils import mouth_aspect_ratio, eye_aspect_ratio, draw_face_landmarks, draw_hand_landmarks, show_in_window
-from utils import CALIBRATION_TIME, YAWN_MIN_TIME, MICROSLEEP_MIN_TIME, GAZE_MIN_TIME, PHONE_MIN_TIME
+from utils import get_drowsiness_thresholds, mouth_aspect_ratio, eye_aspect_ratio, draw_face_landmarks, draw_hand_landmarks, show_in_window
+from utils import CALIBRATION_TIME, YAWN_MIN_TIME, MICROSLEEP_MIN_TIME, GAZE_MIN_TIME, PHONE_MIN_TIME, FACE_RECONGTION_FRAME_INTERVAL
 from utils import FPS_AVG_FRAME_COUNT, COUNTER, FPS, START_TIME
 from utils import FACE_DETECTION_RESULT, HAND_DETECTION_RESULT
 
@@ -22,6 +22,7 @@ from yawn_detector import YawnDetector
 from microsleep_detector import MicrosleepDetector
 from gaze_detector import GazeDetector
 from phone_detector import PhoneDetector
+from face_recognizer import FaceRecognizer
 
 import requests
 import uuid
@@ -29,9 +30,6 @@ import base64
 
 # Result of the face landmark detection
 DETECTION_RESULT = None
-
-# Calibration time
-CALIBRATION_TIME = 3
 
 # Calculate FPS
 FPS_AVG_FRAME_COUNT = 10
@@ -79,7 +77,10 @@ def capture_face_landmarks(cap: cv2.VideoCapture, face_landmarker: vision.FaceLa
                 draw_face_landmarks(current_frame, FACE_DETECTION_RESULT.face_landmarks[0])
 
             cv2.putText(current_frame, 'Finished in: ' + str(calibration_time - int(time.time() - start_time)), (width // 2 - 100, height // 2 - 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-            show_in_window('video_processing', current_frame)
+            if lock_window:
+                show_in_window('video_processing', current_frame)
+            else:
+                cv2.imshow('video_processing', current_frame)
             cv2.waitKey(1)
 
             if time.time() - start_time >= calibration_time:
@@ -118,7 +119,7 @@ def run(face_model: str, num_faces: int,
         min_hand_detection_confidence: float,
         min_hand_presence_confidence: float,
         camera_id: int, width: int, height: int,
-        drowsiness_enabled: bool, gaze_enabled: bool, phone_enabled: bool, hand_enabled: bool,
+        drowsiness_enabled: bool, gaze_enabled: bool, phone_enabled: bool, hand_enabled: bool, face_recognition_enabled: bool,
         django_enabled: bool, hide_window: bool, lock_window: bool) -> None:
 
     # Start capturing video input from the camera
@@ -170,7 +171,8 @@ def run(face_model: str, num_faces: int,
 
     # Calibrate the eye aspect ratio and mouth aspect ratio thresholds
     if drowsiness_enabled:
-        ear_mean, ear_std, ear_threshold, mar_mean, mar_std, mar_threshold = calibrate_face(cap, face_landmarker, width, height, lock_window)
+        # ear_mean, ear_std, ear_threshold, mar_mean, mar_std, mar_threshold = calibrate_face(cap, face_landmarker, width, height, lock_window)
+        ear_mean, ear_std, ear_threshold, mar_mean, mar_std, mar_threshold = get_drowsiness_thresholds()
         print(f'EAR threshold: {ear_threshold}, MAR threshold: {mar_threshold}')
 
     # Initialize detectors
@@ -182,6 +184,8 @@ def run(face_model: str, num_faces: int,
         gaze_detector = GazeDetector(width=width, height=height, min_time=GAZE_MIN_TIME)
     if phone_enabled:
         phone_detector = PhoneDetector(width=width, height=height, min_time=PHONE_MIN_TIME)
+    if face_recognition_enabled:
+        face_recognizer = FaceRecognizer(width, height)
     
     def encode_image_to_base64(image):
         _, buffer = cv2.imencode('.jpg', image)
@@ -198,7 +202,10 @@ def run(face_model: str, num_faces: int,
         image = cv2.flip(image, 1)
         current_frame = image
         cv2.putText(current_frame, 'Press the space bar to start the program.', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-        show_in_window('video_processing', current_frame)
+        if lock_window:
+            show_in_window('video_processing', current_frame)
+        else:
+            cv2.imshow('video_processing', current_frame)
         if cv2.waitKey(1) == 32:
             break
     
@@ -335,6 +342,14 @@ def run(face_model: str, num_faces: int,
             
             draw_face_landmarks(current_frame, face_landmarks)
 
+            if face_recognition_enabled:
+                if COUNTER % FACE_RECONGTION_FRAME_INTERVAL == 0:
+                    face_matched = face_recognizer.recognize_face(image)
+                    if not face_matched:
+                       print(f'User not recognized: ', datetime.now().strftime('%H:%M:%S'))
+                    else:
+                        print(f'User recognized: ', datetime.now().strftime('%H:%M:%S'))
+
         if HAND_DETECTION_RESULT and HAND_DETECTION_RESULT.hand_landmarks:
             hand_landmarks = HAND_DETECTION_RESULT.hand_landmarks
             draw_hand_landmarks(current_frame, hand_landmarks)
@@ -363,7 +378,10 @@ def run(face_model: str, num_faces: int,
                         print("Phone data successfully sent to Django")
 
         if not hide_window:
-            show_in_window('video_processing', current_frame)
+            if lock_window:
+                show_in_window('video_processing', current_frame)
+            else:
+                cv2.imshow('video_processing', current_frame)
 
         # Stop the program if the ESC key is pressed.
         if cv2.waitKey(1) == 27:
@@ -470,6 +488,13 @@ def main():
         default=False
     )
     parser.add_argument(
+         '--disableFaceRecognition',
+         help='Enable face recognition.',
+         action='store_true',
+         required=False,
+         default=False
+     )
+    parser.add_argument(
         '--disableDjango',
         help='Enable Django server.',
         action='store_true',
@@ -497,7 +522,7 @@ def main():
         args.hand_model, int(args.numHands), args.minHandDetectionConfidence,
         args.minHandPresenceConfidence,
         int(args.cameraId), args.frameWidth, args.frameHeight,
-        not args.disableDrowsiness, not args.disableGaze, not args.disablePhone, not args.disableHand,
+        not args.disableDrowsiness, not args.disableGaze, not args.disablePhone, not args.disableHand, not args.disableFaceRecognition,
         not args.disableDjango, args.hideWindow, args.lockWindow)
 
 

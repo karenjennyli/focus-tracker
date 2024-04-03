@@ -1,3 +1,4 @@
+import os
 import time
 import cv2
 import numpy as np
@@ -42,6 +43,13 @@ PHONE_CONFIDENCE_THRESHOLD = 0.5
 
 # people detector constants
 PEOPLE_HISTORY_LENGTH = 10
+
+# face recognition constants
+FACE_DETECTOR_BACKEND = 'fastmtcnn'
+FACE_RECOGNITION_MODEL_NAME = 'SFace'
+FACE_DISTANCE_METRIC = 'euclidean_l2'
+FACE_RECOGNITION_KEYPOINTS = [10, 152, 127, 356]
+FACE_RECONGTION_FRAME_INTERVAL = 10
 
 # all face landmark keypoints
 ALL_KEYPOINTS = [MOUTH_KEYPOINTS, LEFT_EYE_KEYPOINTS, RIGHT_EYE_KEYPOINTS, HEAD_POSE_KEYPOINTS]
@@ -102,6 +110,14 @@ def eye_aspect_ratio(face_landmarks: landmark_pb2.NormalizedLandmarkList) -> flo
     right_ear = (a + b) / (2.0 * c)
 
     return (left_ear + right_ear) / 2.0
+
+
+def get_drowsiness_thresholds(file_path: str = 'calibration_data/drowsiness_thresholds.csv') -> tuple[float, float, float, float, float, float]:
+    dir = os.path.dirname(__file__)
+    file_path = os.path.join(dir, file_path)
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
+        return tuple(map(float, lines[1].split(',')))
 
 
 def draw_face_landmarks(current_frame: np.ndarray, face_landmarks: list[vision.FaceLandmarker]) -> None:
