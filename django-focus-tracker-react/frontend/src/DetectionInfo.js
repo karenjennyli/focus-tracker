@@ -87,6 +87,22 @@ function DetectionData() {
                 backgroundColor: 'rgba(75, 192, 192, 0.5)',
                 borderColor: 'rgba(0, 0, 0, 0.8)', // Make lines darker,
                 pointRadius: 5
+            },
+            {
+                label: 'Phone',
+                data: DetectionData.filter(d => d.detection_type.includes('phone'))
+                    .map(d => ({ x: new Date(d.timestamp), y: 3 })),
+                backgroundColor: 'rgba(255, 206, 86, 0.5)',
+                borderColor: 'rgba(0, 0, 0, 0.8)', // Make lines darker,
+                pointRadius: 5
+            },
+            {
+                label: 'People',
+                data: DetectionData.filter(d => d.detection_type.includes('people'))
+                    .map(d => ({ x: new Date(d.timestamp), y: 3 })),
+                backgroundColor: 'rgba(153, 102, 255, 0.5)',
+                borderColor: 'rgba(0, 0, 0, 0.8)', // Make lines darker,
+                pointRadius: 5
             }
         ]
     };
@@ -134,6 +150,8 @@ function DetectionData() {
                         if (value === 1) return 'Yawn';
                         else if (value === 2) return 'Sleep';
                         else if (value === 3) return 'Gaze';
+                        else if (value === 4) return 'Phone';
+                        else if (value === 5) return 'People';
                         return null;
                     },
                     color: '#000', // Dark font color for ticks

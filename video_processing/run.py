@@ -203,6 +203,8 @@ def run(face_model: str, num_faces: int,
     yawn_freq = 0
     sleep_freq = 0
     gaze_freq = 0
+    phone_freq = 0
+    people_freq = 0
     # Continuously capture images from the camera and run inference
     while cap.isOpened():
         success, image = cap.read()
@@ -241,6 +243,21 @@ def run(face_model: str, num_faces: int,
             people_detected = people_detector.detect_people(FACE_DETECTION_RESULT.face_landmarks)
             if people_detected:
                 print(f'Other people detected: ', datetime.now().strftime('%H:%M:%S'))
+                people_freq += 1
+                if django_enabled:
+                    encoded_image = encode_image_to_base64(image)
+                    data = {
+                        'session_id': session_id,
+                        'user_id': 'user123',
+                        'detection_type': 'people',
+                        'timestamp': datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
+                        'aspect_ratio': -1,  # No aspect ratio for people detection
+                        'image': encoded_image,
+                        'frequency': people_freq
+                    }
+                    response = requests.post('http://127.0.0.1:8000/api/detections/', json=data)
+                    if response.status_code == 201:
+                        print("People data successfully sent to Django")
 
             face_landmarks = FACE_DETECTION_RESULT.face_landmarks[0]
             if drowsiness_enabled:
@@ -325,7 +342,22 @@ def run(face_model: str, num_faces: int,
             phone_detected, annotated_image = phone_detector.detect_phone(current_frame, hand_landmarks)
             if phone_detected:
                 print(f'Phone: ', datetime.now().strftime('%H:%M:%S'))
+                phone_freq += 1
                 current_frame = annotated_image
+                if django_enabled:
+                    encoded_image = encode_image_to_base64(image)
+                    data = {
+                        'session_id': session_id,
+                        'user_id': 'user123',
+                        'detection_type': 'phone',
+                        'timestamp': datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
+                        'aspect_ratio': -1,  # No aspect ratio for phone detection
+                        'image': encoded_image,
+                        'frequency': phone_freq
+                    }
+                    response = requests.post('http://127.0.0.1:8000/api/detections/', json=data)
+                    if response.status_code == 201:
+                        print("Phone data successfully sent to Django")
 
         if not hide_window:
             show_in_window('video_processing', current_frame)
