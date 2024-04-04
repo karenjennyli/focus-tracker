@@ -27,6 +27,8 @@ import requests
 import uuid
 import base64
 
+DEBUG_MODE = False
+
 # Result of the face landmark detection
 DETECTION_RESULT = None
 
@@ -379,6 +381,8 @@ def run(face_model: str, num_faces: int,
                     if face_recognizer.user_recognized:
                         print(f'User not recognized: ', datetime.now().strftime('%H:%M:%S'))
                         face_recognizer.user_recognized = False
+                if DEBUG_MODE:
+                    print([int(value) for value in face_recognizer.history])
 
         if not hide_window:
             if lock_window:
