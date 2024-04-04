@@ -17,7 +17,8 @@ class FaceRecognizer:
         self.img_width = width
         self.img_height = height
         self.history_length = history_length
-        self.history = [False] * history_length
+        self.history = [True] * history_length
+        self.user_recognized = True
         self.recognition_model: FacialRecognition = DeepFace.build_model(model_name=FACE_RECOGNITION_MODEL_NAME)
         self.target_size = self.recognition_model.input_shape
 
@@ -42,11 +43,7 @@ class FaceRecognizer:
             self.history.pop(0)
         self.history.append(False)
 
-        try:
-            faces = DeepFace.extract_faces(face_img, target_size=self.target_size, detector_backend=FACE_DETECTOR_BACKEND, enforce_detection=False)
-        except ValueError:
-            print("No face detected")
-        
+        faces = DeepFace.extract_faces(face_img, target_size=self.target_size, detector_backend=FACE_DETECTOR_BACKEND, enforce_detection=False)        
         for face in faces:
             face = np.expand_dims(face["face"], axis=0)
             face_embedding = self.recognition_model.find_embeddings(face)

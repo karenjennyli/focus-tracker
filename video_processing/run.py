@@ -374,9 +374,11 @@ def run(face_model: str, num_faces: int,
             if COUNTER % FACE_RECOGNITION_FRAME_INTERVAL == 0:
                 executor.submit(async_face_recognition, face_recognizer, image)
                 if any(face_recognizer.history):
-                    print(f'User recognized: ', datetime.now().strftime('%H:%M:%S'))
+                    face_recognizer.user_recognized = True
                 else:
-                    print(f'User not recognized: ', datetime.now().strftime('%H:%M:%S'))
+                    if face_recognizer.user_recognized:
+                        print(f'User not recognized: ', datetime.now().strftime('%H:%M:%S'))
+                        face_recognizer.user_recognized = False
 
         if not hide_window:
             if lock_window:
