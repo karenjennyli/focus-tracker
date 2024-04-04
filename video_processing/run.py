@@ -244,7 +244,7 @@ def run(face_model: str, num_faces: int,
 
         # TODO: implement facial recognition to distinguish between user's face and other faces
 
-        if FACE_DETECTION_RESULT and FACE_DETECTION_RESULT.face_landmarks:
+        if FACE_DETECTION_RESULT and FACE_DETECTION_RESULT.face_landmarks and len(FACE_DETECTION_RESULT.face_landmarks) > 0:
             if django_enabled:
                 current_session_data = {
                     'session_id': session_id,
@@ -376,11 +376,20 @@ def run(face_model: str, num_faces: int,
             if COUNTER % FACE_RECOGNITION_FRAME_INTERVAL == 0:
                 executor.submit(async_face_recognition, face_recognizer, image)
                 if any(face_recognizer.history):
+                    # indicates user has returned
+                    if not face_recognizer.user_recognized:
+                        print(f'User recognized: ', datetime.now().strftime('%H:%M:%S'))
+                        away_time = time.time() - face_recognizer.user_left_time
+                        # add 5 sec to account for the time it takes to recognize the user has left
+                        away_time += 5
+                        print(f'User was away for {away_time} seconds')
                     face_recognizer.user_recognized = True
                 else:
+                    # indicates user has left or someone else is in front of the camera
                     if face_recognizer.user_recognized:
                         print(f'User not recognized: ', datetime.now().strftime('%H:%M:%S'))
                         face_recognizer.user_recognized = False
+                        face_recognizer.user_left_time = time.time()
                 if DEBUG_MODE:
                     print([int(value) for value in face_recognizer.history])
 

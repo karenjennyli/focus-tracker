@@ -19,6 +19,7 @@ class FaceRecognizer:
         self.history_length = history_length
         self.history = [True] * history_length
         self.user_recognized = True
+        self.user_left_time = None
         self.recognition_model: FacialRecognition = DeepFace.build_model(model_name=FACE_RECOGNITION_MODEL_NAME)
         self.target_size = self.recognition_model.input_shape
 
