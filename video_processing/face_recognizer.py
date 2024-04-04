@@ -6,7 +6,7 @@ from mediapipe.tasks.python import vision
 from mediapipe.framework.formats import landmark_pb2
 
 from deepface import DeepFace
-from deepface.modules import verification
+from deepface.modules import verification, detection
 from deepface.models.FacialRecognition import FacialRecognition
 
 from utils import FACE_DETECTOR_BACKEND, FACE_RECOGNITION_MODEL_NAME, FACE_DISTANCE_METRIC, FACE_RECOGNITION_KEYPOINTS
@@ -40,10 +40,12 @@ class FaceRecognizer:
     def recognize_face(self, face_img: np.ndarray) -> bool:
         # returns True if the face is recognized, False otherwise
         recognized = False
-        faces = DeepFace.extract_faces(face_img, target_size=self.target_size, detector_backend=FACE_DETECTOR_BACKEND, enforce_detection=False)
-        if len(faces) == 0:
+        try:
+            faces = DeepFace.extract_faces(face_img, target_size=self.target_size, detector_backend=FACE_DETECTOR_BACKEND)
+        except ValueError:
+            print("No face detected")
             return recognized
-
+        
         for face in faces:
             face = np.expand_dims(face["face"], axis=0)
             face_embedding = self.recognition_model.find_embeddings(face)
@@ -76,6 +78,7 @@ class FaceRecognizer:
         # returns index of the matched face, -1 if no match
         recognized_index = -1
         faces = DeepFace.extract_faces(face_img, target_size=self.target_size, detector_backend=FACE_DETECTOR_BACKEND, enforce_detection=False)
+        faces = extract_faces.extract_face_area(face_img, face_landmarks, FACE_RECOGNITION_KEYPOINTS, faces)
         if len(faces) == 0:
             return recognized_index
         

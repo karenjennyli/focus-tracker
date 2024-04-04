@@ -5,6 +5,7 @@ import numpy as np
 import mediapipe as mp
 from mediapipe.tasks.python import vision
 from mediapipe.framework.formats import landmark_pb2
+from datetime import datetime
 
 mp_face_mesh = mp.solutions.face_mesh
 mp_drawing = mp.solutions.drawing_utils
@@ -157,3 +158,11 @@ def draw_hand_landmarks(current_frame: np.ndarray, hand_landmarks: list[landmark
             mp_drawing_styles.get_default_hand_landmarks_style(),
             mp_drawing_styles.get_default_hand_connections_style()
         )
+
+
+def async_face_recognition(face_recognizer, image: np.ndarray):
+    face_matched = face_recognizer.recognize_face(image)
+    if not face_matched:
+        print(f'User not recognized: ', datetime.now().strftime('%H:%M:%S'))
+    else:
+        print(f'User recognized: ', datetime.now().strftime('%H:%M:%S'))

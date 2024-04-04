@@ -4,15 +4,14 @@ import argparse
 import sys
 import time
 from datetime import datetime
-
 import cv2
 import mediapipe as mp
 import numpy as np
-
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
+from concurrent.futures import ThreadPoolExecutor
 
-from utils import get_drowsiness_thresholds, mouth_aspect_ratio, eye_aspect_ratio, draw_face_landmarks, draw_hand_landmarks, show_in_window
+from utils import get_drowsiness_thresholds, mouth_aspect_ratio, eye_aspect_ratio, draw_face_landmarks, draw_hand_landmarks, show_in_window, async_face_recognition
 from utils import CALIBRATION_TIME, YAWN_MIN_TIME, MICROSLEEP_MIN_TIME, GAZE_MIN_TIME, PHONE_MIN_TIME, FACE_RECOGNITION_FRAME_INTERVAL
 from utils import FPS_AVG_FRAME_COUNT, COUNTER, FPS, START_TIME
 from utils import FACE_DETECTION_RESULT, HAND_DETECTION_RESULT
@@ -121,6 +120,8 @@ def run(face_model: str, num_faces: int,
         camera_id: int, width: int, height: int,
         drowsiness_enabled: bool, gaze_enabled: bool, phone_enabled: bool, hand_enabled: bool, face_recognition_enabled: bool,
         django_enabled: bool, hide_window: bool, lock_window: bool) -> None:
+    
+    executor = ThreadPoolExecutor(max_workers=8)
 
     # Start capturing video input from the camera
     cap = cv2.VideoCapture(camera_id)
@@ -343,12 +344,8 @@ def run(face_model: str, num_faces: int,
             draw_face_landmarks(current_frame, face_landmarks)
 
             if face_recognition_enabled:
-                if True or COUNTER % FACE_RECOGNITION_FRAME_INTERVAL == 0:
-                    face_matched = face_recognizer.recognize_face(image)
-                    if not face_matched:
-                       print(f'User not recognized: ', datetime.now().strftime('%H:%M:%S'))
-                    else:
-                        print(f'User recognized: ', datetime.now().strftime('%H:%M:%S'))
+                if COUNTER % FACE_RECOGNITION_FRAME_INTERVAL == 0:
+                    executor.submit(async_face_recognition, face_recognizer, image)
 
         if HAND_DETECTION_RESULT and HAND_DETECTION_RESULT.hand_landmarks:
             hand_landmarks = HAND_DETECTION_RESULT.hand_landmarks
@@ -389,6 +386,7 @@ def run(face_model: str, num_faces: int,
 
     face_landmarker.close()
     cap.release()
+    executor.shutdown()
     cv2.destroyAllWindows()
 
 
