@@ -161,8 +161,4 @@ def draw_hand_landmarks(current_frame: np.ndarray, hand_landmarks: list[landmark
 
 
 def async_face_recognition(face_recognizer, image: np.ndarray):
-    face_matched = face_recognizer.recognize_face(image)
-    if not face_matched:
-        print(f'User not recognized: ', datetime.now().strftime('%H:%M:%S'))
-    else:
-        print(f'User recognized: ', datetime.now().strftime('%H:%M:%S'))
+    face_recognizer.recognize_face(image)

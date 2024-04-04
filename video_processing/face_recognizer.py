@@ -6,18 +6,18 @@ from mediapipe.tasks.python import vision
 from mediapipe.framework.formats import landmark_pb2
 
 from deepface import DeepFace
-from deepface.modules import verification, detection
+from deepface.modules import verification
 from deepface.models.FacialRecognition import FacialRecognition
 
 from utils import FACE_DETECTOR_BACKEND, FACE_RECOGNITION_MODEL_NAME, FACE_DISTANCE_METRIC, FACE_RECOGNITION_KEYPOINTS
 
 class FaceRecognizer:
 
-    def __init__(self, width: int, height: int, time_limit: int = 30, template_img_path: str = 'calibration_data/template_face.jpg'):
+    def __init__(self, width: int, height: int, history_length: int = 30, template_img_path: str = 'calibration_data/template_face.jpg'):
         self.img_width = width
         self.img_height = height
-        self.time_limit = time_limit
-        self.last_match_time = None
+        self.history_length = history_length
+        self.history = [False] * history_length
         self.recognition_model: FacialRecognition = DeepFace.build_model(model_name=FACE_RECOGNITION_MODEL_NAME)
         self.target_size = self.recognition_model.input_shape
 
@@ -38,13 +38,14 @@ class FaceRecognizer:
 
 
     def recognize_face(self, face_img: np.ndarray) -> bool:
-        # returns True if the face is recognized, False otherwise
-        recognized = False
+        if len(self.history) >= self.history_length:
+            self.history.pop(0)
+        self.history.append(False)
+
         try:
-            faces = DeepFace.extract_faces(face_img, target_size=self.target_size, detector_backend=FACE_DETECTOR_BACKEND)
+            faces = DeepFace.extract_faces(face_img, target_size=self.target_size, detector_backend=FACE_DETECTOR_BACKEND, enforce_detection=False)
         except ValueError:
             print("No face detected")
-            return recognized
         
         for face in faces:
             face = np.expand_dims(face["face"], axis=0)
@@ -53,7 +54,7 @@ class FaceRecognizer:
             distance = verification.find_distance(self.template_embedding, face_embedding, distance_metric=FACE_DISTANCE_METRIC)
 
             if distance <= self.threshold:
-                recognized = True
+                self.history[-1] = True
                 break
 
-        return recognized
+        return any(self.history)

@@ -343,10 +343,6 @@ def run(face_model: str, num_faces: int,
             
             draw_face_landmarks(current_frame, face_landmarks)
 
-            if face_recognition_enabled:
-                if COUNTER % FACE_RECOGNITION_FRAME_INTERVAL == 0:
-                    executor.submit(async_face_recognition, face_recognizer, image)
-
         if HAND_DETECTION_RESULT and HAND_DETECTION_RESULT.hand_landmarks:
             hand_landmarks = HAND_DETECTION_RESULT.hand_landmarks
             draw_hand_landmarks(current_frame, hand_landmarks)
@@ -373,6 +369,14 @@ def run(face_model: str, num_faces: int,
                     response = requests.post('http://127.0.0.1:8000/api/detections/', json=data)
                     if response.status_code == 201:
                         print("Phone data successfully sent to Django")
+
+        if face_recognition_enabled:
+            if COUNTER % FACE_RECOGNITION_FRAME_INTERVAL == 0:
+                executor.submit(async_face_recognition, face_recognizer, image)
+                if any(face_recognizer.history):
+                    print(f'User recognized: ', datetime.now().strftime('%H:%M:%S'))
+                else:
+                    print(f'User not recognized: ', datetime.now().strftime('%H:%M:%S'))
 
         if not hide_window:
             if lock_window:
