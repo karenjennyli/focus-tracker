@@ -13,7 +13,7 @@ from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 
 from utils import get_drowsiness_thresholds, mouth_aspect_ratio, eye_aspect_ratio, draw_face_landmarks, draw_hand_landmarks, show_in_window
-from utils import CALIBRATION_TIME, YAWN_MIN_TIME, MICROSLEEP_MIN_TIME, GAZE_MIN_TIME, PHONE_MIN_TIME, FACE_RECONGTION_FRAME_INTERVAL
+from utils import CALIBRATION_TIME, YAWN_MIN_TIME, MICROSLEEP_MIN_TIME, GAZE_MIN_TIME, PHONE_MIN_TIME, FACE_RECOGNITION_FRAME_INTERVAL
 from utils import FPS_AVG_FRAME_COUNT, COUNTER, FPS, START_TIME
 from utils import FACE_DETECTION_RESULT, HAND_DETECTION_RESULT
 
@@ -343,7 +343,7 @@ def run(face_model: str, num_faces: int,
             draw_face_landmarks(current_frame, face_landmarks)
 
             if face_recognition_enabled:
-                if COUNTER % FACE_RECONGTION_FRAME_INTERVAL == 0:
+                if True or COUNTER % FACE_RECOGNITION_FRAME_INTERVAL == 0:
                     face_matched = face_recognizer.recognize_face(image)
                     if not face_matched:
                        print(f'User not recognized: ', datetime.now().strftime('%H:%M:%S'))
