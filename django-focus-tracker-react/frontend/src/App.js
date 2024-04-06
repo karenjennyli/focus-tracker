@@ -5,6 +5,7 @@ import DetectionData from './DetectionInfo';
 import CalibrationPage from './CalibrationPage';
 import SessionSummary from './SessionSummary';
 import emotiveHeadset from './emotiveHeadset.png'
+import camera from './camera2.png'
 
 // function App() {
 //   return (
@@ -63,7 +64,7 @@ function App() {
               width="full"
               align="center"
               justifyContent="space-between"
-              pt={3} // reduce top padding
+              pt={5} // reduce top padding
               pb={2} // reduce bottom padding
             >
               <Text fontSize="lg" fontWeight="bold" color="white">
@@ -92,58 +93,72 @@ function MainContent() {
   return (
     <VStack spacing={8}>
       <VStack spacing={8}>
-          <Heading as="h1" size="4xl" fontWeight="bold" color="brand.blue" mt={0} mb={2}>
+          <Heading as="h1" size="4xl" fontWeight="bold" color="brand.blue" mt={6} mb={2}>
             Focus Tracker App
           </Heading>
-          <Text maxW="46rem">
-            This App enables users to measure their focus and associated distractions during work sessions to help them identify actionable steps to improve their productivity.
+          <Text maxW="54rem">
+            This app leverages an EEG headset and web camera, employing machine learning algorithms to accurately measure users' focus levels and identify distractions in real time during work sessions. It aims to help users identify actionable steps to enhance their productivity.
           </Text>
-          <Button size="lg" colorScheme="blue" onClick={() => navigate('/calibration-page')}>
+          <Button mt={3} size="lg" colorScheme="blue" onClick={() => navigate('/calibration-page')}>
             Get Started
           </Button>
       </VStack>
       {/* Features Section */}
-      <Container maxW="container.xl" pt={10}>
-        <Box p={5} shadow="md" borderWidth="1px" borderRadius="md" overflow="hidden">
-          <Flex align="center" justify="center" direction={{ base: "column", md: "row" }}>
-            <Box flexShrink={0}>
-              <Image
-                src={emotiveHeadset}
-                alt="Emotiv Headset"
-                boxSize="500px" 
-                objectFit="contain"
-                p={2} // Padding to ensure the image doesn't touch the edges of the box
-              />
-            </Box>
-            <Box ml={{ md: 6 }} mt={{ base: 4, md: 0 }}>
-              <Text fontWeight="bold" textTransform="uppercase" fontSize="lg" letterSpacing="wide" color="teal.600">
-                Feature One
-              </Text>
-              <Text mt={2} color="gray.600">
-                Detailed explanation of the feature that relates to the image of the Emotiv headset.
-              </Text>
-              {/* Add more descriptive text or buttons as needed */}
-            </Box>
-          </Flex>
-        </Box>
-      </Container>
-      {
-        /* 
-         <Flex direction={{ base: "column", md: "row" }} justify="space-around">
-          <Box p={5} shadow="md" borderWidth="1px">
-            <Heading fontSize="xl">Feature One</Heading>
-            <Text mt={4}>Description for feature one.</Text>
+      <Flex direction={{ base: "column", lg: "row" }} justify="space-between" pt={10}>
+        <Container maxW="container.xl">
+          <Box p={5} shadow="md" borderWidth="1px" borderRadius="md" overflow="hidden" bg="gray.500">
+            <Flex align="center" justify="center" direction={{ base: "column", md: "row" }}>
+              <Box flexShrink={0}>
+                <Image
+                  src={emotiveHeadset}
+                  alt="Emotiv Headset"
+                  boxSize="350px" 
+                  objectFit="contain"
+                  p={2} // Padding to ensure the image doesn't touch the edges of the box
+                />
+              </Box>
+              <Box ml={{ md: 6 }} mt={{ base: 4, md: 0 }}>
+                <Text fontWeight="bold" textTransform="uppercase" fontSize="lg" letterSpacing="wide" color="teal.300">
+                  Emotiv Insight EEG Headset
+                </Text>
+                <Text mt={2} color="gray.900">
+                  The Insight headset has 5 sensors which places it right in the middle of other EEG headset options which have anywhere from 1-32 sensors to measure EEG signals from different regions of the brain.
+                </Text>
+                {/* Add more descriptive text here if needed */}
+              </Box>
+            </Flex>
           </Box>
-          <Box p={5} shadow="md" borderWidth="1px">
-            <Heading fontSize="xl">Feature Two</Heading>
-            <Text mt={4}>Description for feature two.</Text>
+        </Container>
+
+        <Container maxW="container.xl">
+          <Box p={5} shadow="md" borderWidth="1px" borderRadius="md" overflow="hidden" bg="gray.500">
+            <Flex align="center" justify="center" direction={{ base: "column", md: "row" }}>
+              <Box flexShrink={0}>
+                <Image
+                  src={camera}
+                  alt="Camera"
+                  boxSize="350px" 
+                  objectFit="contain"
+                  p={2} // Padding to ensure the image doesn't touch the edges of the box
+                />
+              </Box>
+              <Box ml={{ md: 6 }} mt={{ base: 4, md: 0 }}>
+                <Text fontWeight="bold" textTransform="uppercase" fontSize="lg" letterSpacing="wide" color="teal.300">
+                  Camera
+                </Text>
+                <Text mt={2} color="gray.900">
+                  The TedGem 1080p camera has a processing rate 10 fps and ensures high-quality real-time monitoring of physical indicators of loss of focus, such as yawning, microsleeps, off-screen gazing, interruptions, and phone pick-ups. 
+                </Text>
+                {/* Add more descriptive text here if needed */}
+              </Box>
+            </Flex>
           </Box>
-        </Flex>*/
-      }
+        </Container>  
+      </Flex>
 
       {/* Footer */}
-      <Flex as="footer" width="full" align="center" justifyContent="center" p={4}>
-        <Text>© 2024 Your Company</Text>
+      <Flex as="footer" width="full" align="center" justifyContent="center" p={10}>
+        <Text>© 2024 Focus Tracker App</Text>
       </Flex>
     </VStack>
   );
