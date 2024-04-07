@@ -1,27 +1,12 @@
 // import './App.css';
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes, useNavigate} from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes} from 'react-router-dom';
 import DetectionData from './DetectionInfo';
 import CalibrationPage from './CalibrationPage';
 import SessionSummary from './SessionSummary';
 import emotiveHeadset from './emotiveHeadset.png'
 import camera from './camera2.png'
-
-// function App() {
-//   return (
-//     <Router>
-//       <div className="App">
-//         <Header />
-//         <Routes> {/* Use Routes instead of Switch */}
-//           <Route path="/" element={<MainContent />} />
-//           <Route path="/calibration-page" element={<CalibrationPage />} />
-//           <Route path="/detection-info" element={<DetectionData />} />
-//           <Route path="/session-summary" element={<SessionSummary />} />
-//         </Routes>
-//       </div>
-//     </Router>
-//   );
-// }
+import FeatureComponent from './featureComponent';
 
 import {
   ChakraProvider,
@@ -88,8 +73,6 @@ function App() {
 }
 
 function MainContent() {
-  const navigate = useNavigate();
-
   return (
     <VStack spacing={8}>
       <VStack spacing={8}>
@@ -99,10 +82,13 @@ function MainContent() {
           <Text maxW="54rem">
             This app leverages an EEG headset and web camera, employing machine learning algorithms to accurately measure users' focus levels and identify distractions in real time during work sessions. It aims to help users identify actionable steps to enhance their productivity.
           </Text>
-          <Button mt={3} size="lg" colorScheme="blue" onClick={() => navigate('/calibration-page')}>
+          {/* <Button mt={3} size="lg" colorScheme="blue" onClick={() => navigate('/calibration-page')}>
             Get Started
-          </Button>
+          </Button> */}
       </VStack>
+            
+      <FeatureComponent/>
+
       {/* Features Section */}
       <Flex direction={{ base: "column", lg: "row" }} justify="space-between" pt={10}>
         <Container maxW="container.xl">
@@ -163,45 +149,5 @@ function MainContent() {
     </VStack>
   );
 }
-
-
-// function Header() {
-//   return (
-//     <header className="App-header">
-//       <div className="logo">Logo</div>
-//       <nav>
-//         <ul>
-//           <li>Home</li>
-//           <li>Features</li>
-//           <li>About</li>
-//         </ul>
-//       </nav>
-//     </header>
-//   );
-// }
-
-// function MainContent() {
-//   return (
-//     <div className="main-content">
-//       <h1>Focus Tracker App</h1>
-//       <div className="intro">
-//         <p>This App enables users to measure their focus and associated distractions during <br></br>work sessions to help them identify actionable steps to improve their productivity.</p>
-//         <br></br>
-//         <Link to="/calibration-page"><button className="get-started">Get Started</button></Link>
-//       </div>
-//       <div className="charts-container">
-//         <div className="chart">
-//           <Chart />
-//         </div>
-//         <div className="pchart">
-//           <PChart />
-//         </div>
-//         <div className="lchart">
-//           <LChart />
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
 
 export default App;
