@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import './DetectionData.css';
 import { Link } from 'react-router-dom';
-import { Scatter } from 'react-chartjs-2';
 import 'chart.js/auto';
 import 'chartjs-adapter-moment';
 import { Chart, registerables } from 'chart.js';
+import LiveGraph from './LiveGraph';
 Chart.register(...registerables);
 
 function DetectionData() {
@@ -59,127 +59,6 @@ function DetectionData() {
 
         // Return formatted time string
         return `${hours}:${minutes} ${ampm}`;
-    };
-
-        // Prepare chart data
-    const chartData = {
-        datasets: [
-            {
-                label: 'Yawn',
-                data: DetectionData.filter(d => d.detection_type === 'yawn')
-                    .map(d => ({ x: new Date(d.timestamp), y: 1 })),
-                backgroundColor: 'rgba(255, 99, 132, 0.5)',
-                borderColor: 'rgba(0, 0, 0, 0.8)', // Make lines darker,
-                pointRadius: 5,
-            },
-            {
-                label: 'Sleep',
-                data: DetectionData.filter(d => d.detection_type === 'sleep')
-                    .map(d => ({ x: new Date(d.timestamp), y: 2 })),
-                backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                borderColor: 'rgba(0, 0, 0, 0.8)', // Make lines darker,
-                pointRadius: 5
-            },
-            {
-                label: 'Gaze',
-                data: DetectionData.filter(d => d.detection_type.includes('gaze'))
-                    .map(d => ({ x: new Date(d.timestamp), y: 3 })),
-                backgroundColor: 'rgba(75, 192, 192, 0.5)',
-                borderColor: 'rgba(0, 0, 0, 0.8)', // Make lines darker,
-                pointRadius: 5
-            },
-            {
-                label: 'Phone',
-                data: DetectionData.filter(d => d.detection_type.includes('phone'))
-                    .map(d => ({ x: new Date(d.timestamp), y: 3 })),
-                backgroundColor: 'rgba(255, 206, 86, 0.5)',
-                borderColor: 'rgba(0, 0, 0, 0.8)', // Make lines darker,
-                pointRadius: 5
-            },
-            {
-                label: 'People',
-                data: DetectionData.filter(d => d.detection_type.includes('people'))
-                    .map(d => ({ x: new Date(d.timestamp), y: 3 })),
-                backgroundColor: 'rgba(153, 102, 255, 0.5)',
-                borderColor: 'rgba(0, 0, 0, 0.8)', // Make lines darker,
-                pointRadius: 5
-            }
-        ]
-    };
-
-    const options = {
-        scales: {
-            x: {
-                grid: {
-                    color: 'rgba(0, 0, 0, 0.8)', // Darker grid lines
-                    lineWidth: 1, // Thicker grid lines
-                },
-                type: 'time',
-                time: {
-                    unit: 'minute',
-                    tooltipFormat: 'h:mm',
-                    displayFormats: {
-                        minute: 'h:mm' // Apply the same format for axis labels
-                    },
-                    round: 'minute'
-                },
-                title: {
-                    display: true,
-                    text: 'Time',
-                    color: '#000', // Dark font color
-                    font: {
-                        size: 16 // Larger font size
-                    }
-                },
-                ticks: {
-                    color: '#000', // Dark font color for ticks
-                    font: {
-                        size: 14 // Larger font size for ticks
-                    }
-                },
-            },
-            y: {
-                grid: {
-                    color: 'rgba(0, 0, 0, 0.8)', // Darker grid lines
-                    lineWidth: 1, // Thicker grid lines
-                },
-                // beginAtZero: true,
-                ticks: {
-                    // This will only work if you have numeric values for y
-                    callback: function (value) {
-                        if (value === 1) return 'Yawn';
-                        else if (value === 2) return 'Sleep';
-                        else if (value === 3) return 'Gaze';
-                        else if (value === 4) return 'Phone';
-                        else if (value === 5) return 'People';
-                        return null;
-                    },
-                    color: '#000', // Dark font color for ticks
-                    font: {
-                        size: 14 // Larger font size for ticks
-                    }
-                },
-                title: {
-                    display: true,
-                    text: 'Distraction Type', 
-                    color: '#000', // Dark font color
-                    font: {
-                        size: 16 // Larger font size
-                    }
-                }
-            }
-        },
-        plugins: {
-            legend: {
-                labels: {
-                    color: '#000', // Dark font color for legend
-                    font: {
-                        size: 14 // Larger font size for legend
-                    }
-                },
-                position: 'top',
-            }
-        }
     };
 
     const [timer, setTimer] = useState(0);
@@ -240,9 +119,7 @@ function DetectionData() {
                 )}
             </div>
             <div className="chart-container">
-                {DetectionData.length > 0 && (
-                    <Scatter data={chartData} options={options}/>
-                )}
+                <LiveGraph DetectionData={DetectionData} />
             </div>
             <div className="stop-fixed-bottom">
                 <Link to="/session-summary">
