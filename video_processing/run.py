@@ -209,6 +209,13 @@ def run(face_model: str, num_faces: int,
     phone_freq = 0
     people_freq = 0
     # Continuously capture images from the camera and run inference
+    if django_enabled:
+        current_session_data = {
+            'session_id': session_id,
+        }
+        resp = requests.post('http://127.0.0.1:8000/api/current_session', json=current_session_data)
+        # if resp.status_code == 201:
+        #         print("Current_session data successfully sent to Django")
     while cap.isOpened():
         success, image = cap.read()
         if not success:
@@ -235,14 +242,6 @@ def run(face_model: str, num_faces: int,
         # TODO: implement facial recognition to distinguish between user's face and other faces
 
         if FACE_DETECTION_RESULT and FACE_DETECTION_RESULT.face_landmarks:
-            if django_enabled:
-                current_session_data = {
-                    'session_id': session_id,
-                }
-                resp = requests.post('http://127.0.0.1:8000/api/current_session', json=current_session_data)
-                # if resp.status_code == 201:
-                #         print("Current_session data successfully sent to Django")
-
             people_detected = people_detector.detect_people(FACE_DETECTION_RESULT.face_landmarks)
             if people_detected:
                 print(f'Other people detected: ', datetime.now().strftime('%H:%M:%S'))
