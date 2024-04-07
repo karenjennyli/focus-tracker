@@ -78,7 +78,7 @@ const LiveGraph = ( { DetectionData } ) => {
                 round: 'second'
             },
             title: {
-                display: true,
+                display: false,
                 text: 'Time',
                 color: '#000', // Dark font color
                 font: {
@@ -99,7 +99,6 @@ const LiveGraph = ( { DetectionData } ) => {
             grid: {
                 display: false
             },
-            // beginAtZero: true,
             ticks: {
                 // This will only work if you have numeric values for y
                 callback: function (value) {
@@ -116,7 +115,7 @@ const LiveGraph = ( { DetectionData } ) => {
                 }
             },
             title: {
-                display: true,
+                display: false,
                 text: 'Distraction Type', 
                 color: '#000', // Dark font color
                 font: {
