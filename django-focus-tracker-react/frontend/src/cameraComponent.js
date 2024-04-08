@@ -6,7 +6,7 @@ import {
     Image,
     Text,
   } from '@chakra-ui/react';
-  import camera from './camera2.png'
+  import LogitechCamera from './Logitech_Camera.png'
   
 function CameraCompontent() {
     return (
@@ -15,17 +15,17 @@ function CameraCompontent() {
                 
                 {/* Left side - Text content */}
                 <Box flex="1" color="white">
-                    <Heading as="h1" size="3xl" fontWeight="bold" mb={4}>
+                    <Heading as="h1" size="3xl" fontWeight="bold" mb={4} sx={{textShadow: `-1px -1px 0 blue, 1px -1px 0 blue, -1px 1px 0 blue, 1px 1px 0 blue`}}>
                         Camera-Based Detection Technology
                     </Heading>
                     <Text fontSize="lg" mb={6}>
-                        The TedGem 1080p camera has a processing rate 10 fps and ensures high-quality real-time monitoring of physical indicators of loss of focus, such as yawning, microsleeps, off-screen gazing, interruptions, and phone pick-ups. 
+                        The Logitech C920 PRO 1080p camera has a processing rate 30 fps and ensures high-quality real-time monitoring of physical indicators of loss of focus, such as yawning, microsleeps, off-screen gazing, interruptions, and phone pick-ups. 
                     </Text>
                 </Box>
 
                 <Box position="relative" width={{ base: "100%", lg: "30%" }} mr={{ lg: "20%", xl: "20%" }}>
                     <Image
-                        src={camera}
+                        src={LogitechCamera}
                         alt="Illustration of connection"
                         position="relative"
                         zIndex="1"

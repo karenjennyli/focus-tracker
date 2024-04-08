@@ -15,7 +15,7 @@ function EmotiveHeadsetComponent() {
                 
                 {/* Left side - Text content */}
                 <Box flex="1" color="white">
-                    <Heading as="h1" size="3xl" fontWeight="bold" mb={4}>
+                    <Heading as="h1" size="3xl" fontWeight="bold" mb={4} sx={{textShadow: `-1px -1px 0 green, 1px -1px 0 green, -1px 1px 0 green, 1px 1px 0 green`}}>
                         Emotiv Insight EEG Headset Technology
                     </Heading>
                     <Text fontSize="lg" mb={6}>
