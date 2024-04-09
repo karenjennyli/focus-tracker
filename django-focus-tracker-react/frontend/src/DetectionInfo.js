@@ -5,6 +5,7 @@ import 'chart.js/auto';
 import 'chartjs-adapter-moment';
 import { Chart, registerables } from 'chart.js';
 import LiveGraph from './LiveGraph';
+import Webcam from "react-webcam";
 Chart.register(...registerables);
 
 function DetectionData() {
@@ -121,6 +122,7 @@ function DetectionData() {
             <div className="chart-container">
                 <LiveGraph DetectionData={DetectionData} />
             </div>
+            <Webcam mirrored={true} />
             <div className="stop-fixed-bottom">
                 <Link to="/session-summary">
                     <button className="stop-button"></button>
