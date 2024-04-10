@@ -39,8 +39,8 @@ function App() {
   return (
     <ChakraProvider theme={theme}>
       <Router>
-      <Box textAlign="center" fontSize="xl" bg={bgColor} color={color}>
-        <Grid minH="100vh" p={3} pt={0}>
+      <Box textAlign="center" fontSize="xl" bg={bgColor} color={color} minHeight="100vh">
+        <Grid p={3} pt={0}>
           {/* Navigation Bar */}
           <Container maxW="1400px" mx="auto" px={0}>
             <Flex
@@ -59,7 +59,7 @@ function App() {
           </Container>
 
           <Routes> {/* Use Routes instead of Switch */}
-          <Route path="/" element={<MainContent />} />
+            <Route path="/" element={<MainContent />} />
             <Route path="/calibration-page" element={<CalibrationPage />} />
             <Route path="/detection-info" element={<DetectionData />} />
             <Route path="/session-summary" element={<SessionSummary />} />
