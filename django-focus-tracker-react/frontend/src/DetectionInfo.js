@@ -14,6 +14,12 @@ function DetectionData() {
     const [sessionId, setSessionId] = useState(null);
     const baseURL = 'http://127.0.0.1:8000';
 
+    const videoConstraints = {
+        width: 1920,
+        height: 1080,
+        facingMode: "user"
+    }
+
     useEffect(() => {
         // Fetch the current session_id from the backend
         fetch('http://127.0.0.1:8000/api/current_session')
@@ -122,7 +128,7 @@ function DetectionData() {
             <div className="chart-container">
                 <LiveGraph DetectionData={DetectionData} />
             </div>
-            <Webcam className='webcam' mirrored={true} />
+            <Webcam className='webcam' audio={false} mirrored={true} videoConstraints={videoConstraints}/>
             <div className="stop-fixed-bottom">
                 <Link to="/session-summary">
                     <button className="stop-button"></button>
