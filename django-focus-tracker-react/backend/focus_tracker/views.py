@@ -43,7 +43,7 @@ class CurrentSessionView(APIView):
     def get(self, request, *args, **kwargs):
         latest_session = Session.objects.order_by('-created_at').first()
         if latest_session:
-            return Response({'session_id': latest_session.session_id})
+            return Response({'session_id': latest_session.session_id, 'created_at': latest_session.created_at})
         else:
             return Response({'status': 'error', 'message': 'No sessions available'}, status=404)
 

@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import './SessionSummary.css';
-// import { Link } from 'react-router-dom';
+import SummaryGraph from './SummaryGraph';
 
 function SessionSummary() {
     const [DetectionData, setDetectionData] = useState([]);
     const [sessionId, setSessionId] = useState(null);
+    const [startTime, setStartTime] = useState(null);
     const [FlowData, setFlowData] = useState([]);
 
     useEffect(() => {
@@ -12,6 +13,7 @@ function SessionSummary() {
             .then(response => response.json())
             .then(data => {
                 setSessionId(data.session_id);
+                setStartTime(new Date(data.created_at));
             });
     }, []);
 
@@ -63,6 +65,9 @@ function SessionSummary() {
             <div className="productivity-score">
                 <p>Productivity Score: </p>
                 <br></br>
+            </div>
+            <div className="chart-container">
+                <SummaryGraph DetectionData={DetectionData} startTime={startTime} />
             </div>
             <h2>Distracted Behaviors Detected</h2>
             {DetectionData.length > 0 ? (
