@@ -3,6 +3,12 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 import './CalibrationPage.css';
 
+import {
+  VStack,
+  Text,
+  Heading,
+} from '@chakra-ui/react';
+
 function CalibrationPage() {
 
     useEffect(() => {
@@ -20,19 +26,23 @@ function CalibrationPage() {
       }, []);
 
     return (
-        <div className="calibration-content">
-            <h1>Calibration</h1>
-            <div className="calibration-intro">
-                <p>Look into the web camera and adjust the Emotiv Headset until calibration is complete. <br></br>Press the green button below to continue.</p>
-                <br></br>
-                <div className="container-fixed-bottom">
-                    <Link to="/detection-info">
-                        <button className="checkmark-button"></button>
-                    </Link>
-                </div>
-            </div>       
-        </div>
+      <VStack spacing={8}>
+        <VStack spacing={8}>
+            <Heading as="h1" fontSize="6xl" fontWeight="bold" color="white" mt={6} mb={2}>
+              Calibration
+            </Heading>
+            <Text maxW="54rem">
+              Look into the web camera and adjust the Emotiv Headset until calibration is complete. <br></br> Press the green button below to continue.
+            </Text>
+            <div className="container-fixed-bottom">
+                <Link to="/detection-info">
+                    <button className="checkmark-button"></button>
+                </Link>
+            </div>  
+        </VStack>
+      </VStack>
     )
+    
 }
 
 export default CalibrationPage;
