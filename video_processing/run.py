@@ -127,8 +127,6 @@ def run(face_model: str, num_faces: int,
 
     # Start capturing video input from the camera
     cap = cv2.VideoCapture(camera_id)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
 
     def save_face_result(result: vision.FaceLandmarkerResult,
                     unused_output_image: mp.Image, timestamp_ms: int):
