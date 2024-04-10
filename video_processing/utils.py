@@ -1,9 +1,11 @@
+import os
 import time
 import cv2
 import numpy as np
 import mediapipe as mp
 from mediapipe.tasks.python import vision
 from mediapipe.framework.formats import landmark_pb2
+from datetime import datetime
 
 mp_face_mesh = mp.solutions.face_mesh
 mp_drawing = mp.solutions.drawing_utils
@@ -42,6 +44,13 @@ PHONE_CONFIDENCE_THRESHOLD = 0.5
 
 # people detector constants
 PEOPLE_HISTORY_LENGTH = 10
+
+# face recognition constants
+FACE_DETECTOR_BACKEND = 'fastmtcnn'
+FACE_RECOGNITION_MODEL_NAME = 'SFace'
+FACE_DISTANCE_METRIC = 'euclidean_l2'
+FACE_RECOGNITION_KEYPOINTS = [10, 152, 127, 356]
+FACE_RECOGNITION_FRAME_INTERVAL = 10
 
 # all face landmark keypoints
 ALL_KEYPOINTS = [MOUTH_KEYPOINTS, LEFT_EYE_KEYPOINTS, RIGHT_EYE_KEYPOINTS, HEAD_POSE_KEYPOINTS]
@@ -104,6 +113,14 @@ def eye_aspect_ratio(face_landmarks: landmark_pb2.NormalizedLandmarkList) -> flo
     return (left_ear + right_ear) / 2.0
 
 
+def get_drowsiness_thresholds(file_path: str = 'calibration_data/drowsiness_thresholds.csv') -> tuple[float, float, float, float, float, float]:
+    dir = os.path.dirname(__file__)
+    file_path = os.path.join(dir, file_path)
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
+        return tuple(map(float, lines[1].split(',')))
+
+
 def draw_face_landmarks(current_frame: np.ndarray, face_landmarks: list[vision.FaceLandmarker]) -> None:
     face_landmarks_proto = landmark_pb2.NormalizedLandmarkList()
     face_landmarks_proto.landmark.extend([
@@ -141,3 +158,7 @@ def draw_hand_landmarks(current_frame: np.ndarray, hand_landmarks: list[landmark
             mp_drawing_styles.get_default_hand_landmarks_style(),
             mp_drawing_styles.get_default_hand_connections_style()
         )
+
+
+def async_face_recognition(face_recognizer, image: np.ndarray):
+    face_recognizer.recognize_face(image)
