@@ -57,6 +57,21 @@ const LiveGraph = ({ DetectionData }) => {
   ];
 
   const layout = {
+    shapes: [
+      ...DetectionData.filter(d => d.detection_type === 'yawn').map(d => ({
+        type: 'rect',
+        x0: new Date(d.timestamp),
+        y0: 0,
+        x1: new Date(d.timestamp).setSeconds(new Date(d.timestamp).getSeconds() + 1),
+        y1: 1,
+        fillcolor: 'green',
+        opacity: 0.5,
+        line: {
+          color: 'green',
+          width: 0
+        }
+      }))
+    ],
     xaxis: {
       range: [min, max],
       type: 'date'

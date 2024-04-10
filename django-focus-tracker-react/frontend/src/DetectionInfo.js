@@ -139,5 +139,3 @@ function DetectionData() {
 }
 
 export default DetectionData;
-
-
