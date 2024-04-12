@@ -43,7 +43,7 @@ function DetectionData() {
                     setDetectionData(data); // Update state with data from the current session
                 })
                 .catch(error => console.error('Error fetching distraction data:', error));
-                fetch(`http://127.0.0.1:8000/api/flow_data/`)
+                fetch(`http://127.0.0.1:8000/api/flow_data`)
                 .then(response => response.json())
                 .then(data => {
                     console.log('Updating flow data:');
