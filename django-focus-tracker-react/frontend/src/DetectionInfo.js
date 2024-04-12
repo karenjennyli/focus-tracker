@@ -10,6 +10,7 @@ Chart.register(...registerables);
 
 function DetectionData() {
     const [DetectionData, setDetectionData] = useState([]);
+    const [ProcessedFlowData, setProcessedFlowData] = useState([]);
     // Add state to track the current session ID. This is initialized in the run.py file
     const [sessionId, setSessionId] = useState(null);
     const baseURL = 'http://127.0.0.1:8000';
@@ -17,7 +18,8 @@ function DetectionData() {
     const videoConstraints = {
         width: 1920,
         height: 1080,
-        facingMode: "user"
+        facingMode: "user",
+        deviceId: "e4fc9040a6bbd234b0da54ee7c9e5e1796b5ced07398f1ae418c9139b56beb69"
     }
 
     useEffect(() => {
@@ -33,7 +35,7 @@ function DetectionData() {
     useEffect(() => {
         if (!sessionId) return; // Don't fetch data if session ID hasn't been set yet
 
-        const fetchDetectionData = () => {
+        const fetchData = () => {
             fetch(`http://127.0.0.1:8000/api/detection-data/?session_id=${sessionId}`)
                 .then(response => response.json())
                 .then(data => {
@@ -41,9 +43,16 @@ function DetectionData() {
                     setDetectionData(data); // Update state with data from the current session
                 })
                 .catch(error => console.error('Error fetching distraction data:', error));
+                fetch(`http://127.0.0.1:8000/api/flow_data/`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Updating flow data:');
+                    setProcessedFlowData(data);
+                })
+                .catch(error => console.error('Error fetching flow data:', error));
         };
 
-        const intervalId = setInterval(fetchDetectionData, 500); // Poll every 500 milliseconds (0.5 second)
+        const intervalId = setInterval(fetchData, 500); // Poll every 500 milliseconds (0.5 second)
 
         return () => clearInterval(intervalId); // Cleanup interval on unmount
     }, [sessionId]); // Rerun this effect if sessionId changes
@@ -126,7 +135,7 @@ function DetectionData() {
                 )}
             </div>
             <div className="chart-container">
-                <LiveGraph DetectionData={DetectionData} />
+                <LiveGraph DetectionData={DetectionData} ProcessedFlowData={ProcessedFlowData}/>
             </div>
             <Webcam className='webcam' audio={false} mirrored={true} videoConstraints={videoConstraints}/>
             <div className="stop-fixed-bottom">

@@ -4,7 +4,7 @@ import createPlotlyComponent from 'react-plotly.js/factory';
 
 const Plot = createPlotlyComponent(Plotly);
 
-const LiveGraph = ({ DetectionData }) => {
+const LiveGraph = ({ DetectionData, ProcessedFlowData }) => {
 
   const [min, setMin] = useState(new Date(Date.now() - 10 * 60 * 1000));
   const [max, setMax] = useState(new Date());
@@ -53,6 +53,13 @@ const LiveGraph = ({ DetectionData }) => {
       mode: 'markers',
       name: 'People',
       marker: { color: 'rgba(153, 102, 255, 0.5)', size: 10 }
+    },
+    {
+      x: ProcessedFlowData.map(d => new Date(d.timestamp_epoch * 1000)),
+      y: ProcessedFlowData.map(d => d.flow === 'Flow' ? 6 : 0),
+      mode: 'markers',
+      name: 'Flow',
+      marker: { color: 'rgba(255, 159, 64, 0.5)', size: 10 }
     }
   ];
 
