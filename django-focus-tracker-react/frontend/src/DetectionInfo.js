@@ -130,7 +130,7 @@ function DetectionData() {
             </div>
             <Webcam className='webcam' audio={false} mirrored={true} videoConstraints={videoConstraints}/>
             <div className="stop-fixed-bottom">
-                <Link to="/session-summary">
+                <Link to={`/session-summary/${sessionId}`}>
                     <button className="stop-button"></button>
                 </Link>
             </div>

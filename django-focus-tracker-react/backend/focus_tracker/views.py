@@ -112,3 +112,20 @@ class FlowDataView(APIView):
         eeg_data = FlowEvent.objects.order_by('-timestamp_formatted')
         serializer = FlowEventSerializer(eeg_data, many=True)
         return Response(serializer.data)
+
+
+def get_sessions(request):
+    sessions = Session.objects.all().values('session_id', 'created_at')  # Get necessary fields
+    session_list = list(sessions)  # Convert QuerySet to a list of dicts
+    print(session_list)
+    return JsonResponse(session_list, safe=False)  # Return as JSON
+
+def get_session_by_id(request, session_id):
+    try:
+        session = Session.objects.get(session_id=session_id)
+        return JsonResponse({
+            'session_id': session.session_id,
+            'created_at': session.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+        })
+    except Session.DoesNotExist:
+        return JsonResponse({'error': 'Session not found'}, status=404)

@@ -1,21 +1,35 @@
 import React, { useEffect, useState } from 'react';
 import './SessionSummary.css';
 import SummaryGraph from './SummaryGraph';
+import { useParams } from 'react-router-dom';
 
 function SessionSummary() {
+    const {sessionIDFromURL} = useParams();
     const [DetectionData, setDetectionData] = useState([]);
     const [sessionId, setSessionId] = useState(null);
     const [startTime, setStartTime] = useState(null);
     const [FlowData, setFlowData] = useState([]);
 
+    // useEffect(() => {
+    //     fetch('http://127.0.0.1:8000/api/current_session')
+    //         .then(response => response.json())
+    //         .then(data => {
+    //             setSessionId(data.session_id);
+    //             setStartTime(new Date(data.created_at));
+    //         });
+    // }, []);
+
     useEffect(() => {
-        fetch('http://127.0.0.1:8000/api/current_session')
+        if (!sessionIDFromURL) return;
+
+        fetch(`http://127.0.0.1:8000/api/session/${sessionIDFromURL}`)
             .then(response => response.json())
             .then(data => {
                 setSessionId(data.session_id);
                 setStartTime(new Date(data.created_at));
-            });
-    }, []);
+            })
+            .catch(error => console.error('Error fetching session data:', error));
+    }, [sessionId]);
 
     useEffect(() => {
         if (!sessionId) return;
