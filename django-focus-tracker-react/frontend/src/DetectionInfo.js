@@ -6,14 +6,15 @@ import 'chartjs-adapter-moment';
 import { Chart, registerables } from 'chart.js';
 import LiveGraph from './LiveGraph';
 import Webcam from "react-webcam";
+import EventList from './EventList';
 Chart.register(...registerables);
 
 function DetectionData() {
     const [DetectionData, setDetectionData] = useState([]);
     const [ProcessedFlowData, setProcessedFlowData] = useState([]);
+    const [Events, setEvents] = useState([]);
     // Add state to track the current session ID. This is initialized in the run.py file
     const [sessionId, setSessionId] = useState(null);
-    const baseURL = 'http://127.0.0.1:8000';
 
     const videoConstraints = {
         width: 1920,
@@ -41,9 +42,15 @@ function DetectionData() {
                 .then(data => {
                     console.log('Updating detection data for session:', sessionId);
                     setDetectionData(data); // Update state with data from the current session
+                    // set the events state with the latest detection data
+                    setEvents(data.map((event) => ({
+                        timestamp: parseAndFormatTime(event.timestamp),
+                        eventType: event.detection_type,
+                        imageUrl: event.image_url,
+                    })));
                 })
                 .catch(error => console.error('Error fetching distraction data:', error));
-                fetch(`http://127.0.0.1:8000/api/flow_data`)
+            fetch(`http://127.0.0.1:8000/api/flow_data`)
                 .then(response => response.json())
                 .then(data => {
                     console.log('Updating flow data:');
@@ -102,40 +109,15 @@ function DetectionData() {
         <div>
             <div>
                 <h1>Current Session</h1>
-                <div className="timer-display">
-                    Session Length: {formatTime(timer)}
-                </div>
-                <h2>Real-Time Updates</h2>
-                {DetectionData.length > 0 ? (
-                    <table className="detection-table">
-                        <thead>
-                            <tr>
-                                <th>Timestamp</th>
-                                <th>Distraction Type</th>
-                                <th>Image</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {DetectionData.slice(0, 6).map((data, index) => (
-                                <tr key={index}>
-                                    <td>{parseAndFormatTime(data.timestamp)}</td>
-                                    <td>{data.detection_type}</td>
-                                    <td>
-                                        {/* Conditionally render image if URL is available */}
-                                        {data.image_url && (
-                                            <img src={baseURL + data.image_url} alt="Distraction" style={{ width: '125px' }} />
-                                        )}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                ) : (
-                    <p>No distraction data available for session {sessionId}.</p>
-                )}
             </div>
+            <h2>Latest Events</h2>
+            {Events.length === 0 && <p>No events detected yet.</p>}
+            {Events.length > 0 && <EventList events={Events} />}
             <div className="chart-container">
                 <LiveGraph DetectionData={DetectionData} ProcessedFlowData={ProcessedFlowData}/>
+            </div>
+            <div className="timer-display">
+                Session Length: {formatTime(timer)}
             </div>
             <Webcam className='webcam' audio={false} mirrored={true} videoConstraints={videoConstraints}/>
             <div className="stop-fixed-bottom">

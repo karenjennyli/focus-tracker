@@ -1,0 +1,15 @@
+.event-list-container {
+  max-height: 100vh;
+  overflow-y: auto; /* Enable vertical scrolling */
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  width: 450px;
+  background-color: #353f53;
+}
+
+.event-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px; /* Add spacing between event cards */
+}
