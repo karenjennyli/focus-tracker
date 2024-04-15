@@ -13,7 +13,7 @@ from utils import FACE_DETECTOR_BACKEND, FACE_RECOGNITION_MODEL_NAME, FACE_DISTA
 
 class FaceRecognizer:
 
-    def __init__(self, width: int, height: int, history_length: int = 20, template_img_path: str = 'calibration_data/template_face.jpg'):
+    def __init__(self, width: int, height: int, history_length: int = 10, template_img_path: str = 'calibration_data/template_face.jpg'):
         self.img_width = width
         self.img_height = height
         self.history_length = history_length

@@ -13,6 +13,7 @@ const EventList = ({ events }) => {
             timestamp={event.timestamp}
             eventType={event.eventType}
             imageUrl={event.imageUrl}
+            info={event.info}
           />
         ))}
       </div>

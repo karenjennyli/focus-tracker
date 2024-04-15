@@ -14,7 +14,9 @@ class GazeDetector:
         self.height = height
         self.min_time = min_time
         self.history_length = history_length
+        self.pitch_history = []
         self.yaw_history = []
+        self.roll_history = []
         self.gazing_left = False
         self.gazing_right = False
         self.left_gaze_start_time = None
@@ -46,9 +48,13 @@ class GazeDetector:
         pitch = math.degrees(pitch)
         yaw = math.degrees(yaw)
         roll = math.degrees(roll)
+        self.pitch_history.append(pitch)
         self.yaw_history.append(yaw)
+        self.roll_history.append(roll)
         if len(self.yaw_history) > self.history_length:
+            self.pitch_history.pop(0)
             self.yaw_history.pop(0)
+            self.roll_history.pop(0)
 
         if np.mean(self.yaw_history) < GAZE_LEFT_THRESHOLD:
             if not self.gazing_left and self.left_gaze_start_time and time.time() - self.left_gaze_start_time >= self.min_time:

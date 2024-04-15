@@ -27,7 +27,7 @@ import requests
 import uuid
 import base64
 
-DEBUG_MODE = False
+DEBUG_MODE = True
 
 # Result of the face landmark detection
 DETECTION_RESULT = None
@@ -184,6 +184,7 @@ def run(face_model: str, num_faces: int,
         ear_mean, ear_std, ear_threshold, mar_mean, mar_std, mar_threshold = get_drowsiness_thresholds()
         print(f'EAR threshold: {ear_threshold}, MAR threshold: {mar_threshold}')
 
+
     # Initialize detectors
     people_detector = PeopleDetector(min_time=PHONE_MIN_TIME)
     if drowsiness_enabled:
@@ -199,6 +200,14 @@ def run(face_model: str, num_faces: int,
     def encode_image_to_base64(image):
         _, buffer = cv2.imencode('.jpg', image)
         return base64.b64encode(buffer).decode()
+
+    if django_enabled:
+        current_session_data = {
+            'session_id': session_id,
+        }
+        resp = requests.post('http://127.0.0.1:8000/api/current_session', json=current_session_data)
+        # if resp.status_code == 201:
+        #         print("Current_session data successfully sent to Django")
 
     # Wait for the user to press the space bar to start the program
     while True:
@@ -216,6 +225,8 @@ def run(face_model: str, num_faces: int,
         else:
             cv2.imshow('video_processing', current_frame)
         if cv2.waitKey(1) == 32:
+            # take a snapshot of the current frame and save to calibration_data/template_face.jpg
+            cv2.imwrite('calibration_data/template_face.jpg', current_frame)
             break
     
     # Initialize the detection frequencies before entering the while cap.isOpened() loop 
@@ -226,13 +237,6 @@ def run(face_model: str, num_faces: int,
     people_freq = 0
     user_not_recognized_freq = 0
     # Continuously capture images from the camera and run inference
-    if django_enabled:
-        current_session_data = {
-            'session_id': session_id,
-        }
-        resp = requests.post('http://127.0.0.1:8000/api/current_session', json=current_session_data)
-        # if resp.status_code == 201:
-        #         print("Current_session data successfully sent to Django")
     while cap.isOpened():
         success, image = cap.read()
         if not success:
@@ -343,6 +347,8 @@ def run(face_model: str, num_faces: int,
             # Draw the head pose angles at the top left corner of the image
             if gaze_enabled:
                 cv2.putText(current_frame, f'Yaw: {int(yaw)}', (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+                cv2.putText(current_frame, f'Pitch: {int(pitch)}', (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+                cv2.putText(current_frame, f'Roll: {int(roll)}', (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
             
             draw_face_landmarks(current_frame, face_landmarks)
 

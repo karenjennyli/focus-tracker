@@ -7,6 +7,7 @@ import { Chart, registerables } from 'chart.js';
 import LiveGraph from './LiveGraph';
 import Webcam from "react-webcam";
 import EventList from './EventList';
+import WebcamCapture from './WebcamCapture';
 Chart.register(...registerables);
 
 function DetectionData() {
@@ -23,6 +24,7 @@ function DetectionData() {
         deviceId: "e4fc9040a6bbd234b0da54ee7c9e5e1796b5ced07398f1ae418c9139b56beb69"
     }
 
+    // get current session id
     useEffect(() => {
         // Fetch the current session_id from the backend
         fetch('http://127.0.0.1:8000/api/current_session')
@@ -33,6 +35,7 @@ function DetectionData() {
             });
     }, []); // Empty array means this runs once on component mount
 
+    // prevent scrolling
     useEffect(() => {
         document.body.style.overflow = "hidden";
         return () => {
@@ -40,6 +43,7 @@ function DetectionData() {
         };
     }, []);
 
+    // fetch detection data
     useEffect(() => {
         if (!sessionId) return; // Don't fetch data if session ID hasn't been set yet
 
@@ -54,6 +58,7 @@ function DetectionData() {
                         timestamp: parseAndFormatTime(event.timestamp),
                         eventType: event.detection_type,
                         imageUrl: event.image_url,
+                        info: event.aspect_ratio,
                     })));
                 })
                 .catch(error => console.error('Error fetching distraction data:', error));

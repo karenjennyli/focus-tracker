@@ -14,8 +14,23 @@ const eventTypeDescriptions = {
   'user returned': 'User has returned to frame'
 };
 
-const EventCard = ({ timestamp, eventType, imageUrl }) => {
-  const description = eventTypeDescriptions[eventType] || 'Unknown event';
+const getDescription = (eventType, info) => {
+  if (eventType === 'user returned') {
+    // if info > 60 seconds, return as min and sec
+    // else return as seconds
+    const minutes = Math.floor(info / 60);
+    const seconds = Math.floor(info % 60);
+    if (info > 60) {
+      return 'User has returned to frame after ' + minutes + ' minutes and ' + seconds + ' seconds';
+    } else {
+      return 'User has returned to frame after ' + seconds + ' seconds';
+    }
+  }
+  return eventTypeDescriptions[eventType] || 'Unknown event';
+}
+
+const EventCard = ({ timestamp, eventType, imageUrl, info }) => {
+  const description = getDescription(eventType, info);
 
   return (
     <div className="event-card">
