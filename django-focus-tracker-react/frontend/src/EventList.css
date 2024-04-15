@@ -1,5 +1,5 @@
 .event-list-container {
-  max-height: 75vh;
+  height: 75vh;
   overflow-y: auto; /* Enable vertical scrolling */
   border-radius: 8px;
   padding: 16px;
@@ -12,7 +12,7 @@
 .event-list {
   display: flex;
   flex-direction: column;
-  gap: 16px; /* Add spacing between event cards */
+  gap: 8px; /* Add spacing between event cards */
 }
 
 .event-card {

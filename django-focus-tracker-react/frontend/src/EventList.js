@@ -6,6 +6,7 @@ const EventList = ({ events }) => {
   return (
     <div className="event-list-container">
       <div className="event-list">
+        {events.length === 0 && <p>No detected events.</p>}
         {events.map((event, index) => (
           <EventCard
             key={index}

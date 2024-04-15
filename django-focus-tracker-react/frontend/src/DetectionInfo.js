@@ -118,8 +118,7 @@ function DetectionData() {
                 <h1>Current Session</h1>
             </div>
             <h2>Latest Events</h2>
-            {Events.length === 0 && <p>No events detected yet.</p>}
-            {Events.length > 0 && <EventList events={Events} />}
+            {<EventList events={Events} />}
             <div className="timer-display">
                 Session Length: {formatTime(timer)}
             </div>
