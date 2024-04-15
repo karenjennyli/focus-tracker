@@ -232,6 +232,7 @@ def run(face_model: str, num_faces: int,
             )
 
         image = cv2.flip(image, 1)
+        encoded_image = encode_image_to_base64(image)
         current_frame = image
 
         rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -247,15 +248,12 @@ def run(face_model: str, num_faces: int,
         # Display the FPS on the image
         cv2.putText(current_frame, 'FPS: {:.2f}'.format(FPS), (10, height - 400), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
-        # TODO: implement facial recognition to distinguish between user's face and other faces
-
         if FACE_DETECTION_RESULT and FACE_DETECTION_RESULT.face_landmarks and len(FACE_DETECTION_RESULT.face_landmarks) > 0:
             people_detected = people_detector.detect_people(FACE_DETECTION_RESULT.face_landmarks)
             if people_detected:
                 print(f'Other people detected: ', datetime.now().strftime('%H:%M:%S'))
                 people_freq += 1
                 if django_enabled:
-                    encoded_image = encode_image_to_base64(image)
                     data = {
                         'session_id': session_id,
                         'user_id': 'user123',
@@ -276,7 +274,6 @@ def run(face_model: str, num_faces: int,
                     print(f'Yawn: ', datetime.now().strftime('%Y-%m-%dT%H:%M:%S'), 'MAR: ', mar)
                     yawn_freq += 1
                     if django_enabled:
-                        encoded_image = encode_image_to_base64(image)
                         data = {
                             'session_id': session_id,
                             'user_id': 'user123',
@@ -295,7 +292,6 @@ def run(face_model: str, num_faces: int,
                     print(f'Microsleep: ', datetime.now().strftime('%H:%M:%S'), 'EAR: ', ear)
                     sleep_freq += 1
                     if django_enabled:
-                        encoded_image = encode_image_to_base64(image)
                         data = {
                             'session_id': session_id,
                             'user_id': 'user123',
@@ -315,7 +311,6 @@ def run(face_model: str, num_faces: int,
                     print(f'Gaze: ', datetime.now().strftime('%H:%M:%S'), gaze)
                     gaze_freq += 1
                     if django_enabled:
-                        encoded_image = encode_image_to_base64(image)
                         data = {
                             'session_id': session_id,
                             'user_id': 'user123',
@@ -355,7 +350,6 @@ def run(face_model: str, num_faces: int,
                 phone_freq += 1
                 current_frame = annotated_image
                 if django_enabled:
-                    encoded_image = encode_image_to_base64(image)
                     data = {
                         'session_id': session_id,
                         'user_id': 'user123',
