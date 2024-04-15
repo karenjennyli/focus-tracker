@@ -34,6 +34,13 @@ function DetectionData() {
     }, []); // Empty array means this runs once on component mount
 
     useEffect(() => {
+        document.body.style.overflow = "hidden";
+        return () => {
+            document.body.style.overflow = "scroll"
+        };
+    }, []);
+    
+    useEffect(() => {
         if (!sessionId) return; // Don't fetch data if session ID hasn't been set yet
 
         const fetchData = () => {

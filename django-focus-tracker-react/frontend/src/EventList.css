@@ -1,15 +1,59 @@
 .event-list-container {
-  max-height: 100vh;
+  max-height: 80%;
   overflow-y: auto; /* Enable vertical scrolling */
   border-radius: 8px;
   padding: 16px;
   margin-bottom: 16px;
-  width: 450px;
+  width: 500px;
   background-color: #353f53;
+  margin-left: 7vw;
 }
 
 .event-list {
   display: flex;
   flex-direction: column;
   gap: 16px; /* Add spacing between event cards */
+}
+
+.event-card {
+  /* border: 1px solid #ddd; */
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+  background-color: white;
+  width: 100%;
+}
+
+.event-footer {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.timestamp {
+  font-weight: bold;
+  font-size: 0.8em;
+  color: #1b202b;
+  margin-right: 10px;
+  width: 100px;
+}
+
+.event-type {
+  color: #1b202b; /* Brand blue color for event type */
+  font-weight: bold;
+}
+
+.thumbnail {
+  width: auto;
+  max-height: 150px;
+  object-fit: cover;
+  border-radius: 4px;
+  margin-bottom: 6px;
+}
+
+.description {
+  font-size: 0.8em;
+  color: #1b202b; /* Brand blue color for event type */
+  text-align: left;
+  width: 400px;
 }
