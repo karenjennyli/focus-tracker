@@ -19,6 +19,7 @@ class GazeDetector:
         self.gazing_right = False
         self.left_gaze_start_time = None
         self.right_gaze_start_time = None
+        self.last_gaze_time = 0
         focal_length = width
         self.camera_matrix = np.array([[focal_length, 0, height // 2], [0, focal_length, width // 2], [0, 0, 1]], dtype=np.float64)
         self.dist_coeffs = np.zeros((4, 1))
@@ -55,6 +56,7 @@ class GazeDetector:
                 return 'left', pitch, yaw, roll
             elif not self.gazing_left and not self.left_gaze_start_time:
                 self.left_gaze_start_time = time.time()
+                self.last_gaze_time = time.time()
         else:
             self.gazing_left = False
             self.left_gaze_start_time = None
@@ -65,6 +67,7 @@ class GazeDetector:
                 return 'right', pitch, yaw, roll
             elif not self.gazing_right and not self.right_gaze_start_time:
                 self.right_gaze_start_time = time.time()
+                self.last_gaze_time = time.time()
         else:
             self.gazing_right = False
             self.right_gaze_start_time = None

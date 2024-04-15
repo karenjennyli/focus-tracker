@@ -40,6 +40,14 @@ START_TIME = time.time()
 session_id = str(uuid.uuid4())
 
 
+def detect_user_not_recognized(face_recognizer: FaceRecognizer, gaze_detector: GazeDetector, phone_detector: PhoneDetector) -> None:
+    # only detect if last gaze detected was 10 seconds before
+    if face_recognizer.user_recognized and not gaze_detector.gazing_left and not gaze_detector.gazing_right and time.time() - gaze_detector.last_gaze_time > 10:
+        return True
+    else:
+        return False
+
+
 def capture_face_landmarks(cap: cv2.VideoCapture, face_landmarker: vision.FaceLandmarker,
                            calibration_time: int, width: int, height: int, calibration_message: str, lock_window: bool) -> list[tuple[float, float]]:
     start_time = None
@@ -216,6 +224,7 @@ def run(face_model: str, num_faces: int,
     gaze_freq = 0
     phone_freq = 0
     people_freq = 0
+    user_not_recognized_freq = 0
     # Continuously capture images from the camera and run inference
     if django_enabled:
         current_session_data = {
@@ -374,13 +383,41 @@ def run(face_model: str, num_faces: int,
                         # add 5 sec to account for the time it takes to recognize the user has left
                         away_time += 5
                         print(f'User was away for {away_time} seconds')
+                        if django_enabled:
+                            data = {
+                                'session_id': session_id,
+                                'user_id': 'user123',
+                                'detection_type': 'user returned',
+                                'timestamp': datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
+                                'aspect_ratio': away_time,  # Time user was away
+                                'image': encoded_image,
+                                'frequency': user_not_recognized_freq
+                            }
+                            response = requests.post('http://127.0.0.1:8000/api/detections/', json=data)
+                            if response.status_code == 201:
+                                print("User returned data successfully sent to Django")
                     face_recognizer.user_recognized = True
                 else:
                     # indicates user has left or someone else is in front of the camera
-                    if face_recognizer.user_recognized:
+                    # only set as not recognized if user isn't gazing away or using phone
+                    if detect_user_not_recognized(face_recognizer, gaze_detector, phone_detector):
                         print(f'User not recognized: ', datetime.now().strftime('%H:%M:%S'))
+                        user_not_recognized_freq += 1
                         face_recognizer.user_recognized = False
                         face_recognizer.user_left_time = time.time()
+                        if django_enabled:
+                            data = {
+                                'session_id': session_id,
+                                'user_id': 'user123',
+                                'detection_type': 'user not recognized',
+                                'timestamp': datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
+                                'aspect_ratio': -1,  # No aspect ratio for user recognition
+                                'image': encoded_image,
+                                'frequency': user_not_recognized_freq
+                            }
+                            response = requests.post('http://127.0.0.1:8000/api/detections/', json=data)
+                            if response.status_code == 201:
+                                print("User not recognized data successfully sent to Django")
                 if DEBUG_MODE:
                     print([int(value) for value in face_recognizer.history])
 

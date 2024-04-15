@@ -10,7 +10,8 @@ const eventTypeDescriptions = {
   'sleep': 'User\'s eyes closed for an extended period, indicating microsleep',
   'people': 'Other people detected in frame as a distraction',
   'phone': 'User interacting with phone',
-  'face not recognized': 'User\'s face is no longer recognized'
+  'user not recognized': 'User is no longer recognized in frame',
+  'user returned': 'User has returned to frame'
 };
 
 const EventCard = ({ timestamp, eventType, imageUrl }) => {
