@@ -1,3 +1,7 @@
+.current-session-page {
+    height: 100vh;
+}
+
 h2 {
     margin-left: 7vw;
     text-align: left;
@@ -8,16 +12,17 @@ h1 {
     margin-top: 20px;
 }
 
-/* Positioning the chart container absolutely */
 .chart-container {
     position: absolute;
-    right: 100px;
-    top: 400px;
+    bottom: 0;
+    right: 0;
+    margin-bottom: 0px;
+    margin-right: 200px;
     width: 600px; 
     height: 600px;
-  }
+}
 
-  .timer-display {
+.timer-display {
     position: absolute;
     top: 0;
     right: 100px;

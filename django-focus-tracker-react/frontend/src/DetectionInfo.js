@@ -39,7 +39,7 @@ function DetectionData() {
             document.body.style.overflow = "scroll"
         };
     }, []);
-    
+
     useEffect(() => {
         if (!sessionId) return; // Don't fetch data if session ID hasn't been set yet
 
@@ -113,20 +113,20 @@ function DetectionData() {
     };
     
     return (
-        <div>
+        <div className='current-session-page'>
             <div>
                 <h1>Current Session</h1>
             </div>
             <h2>Latest Events</h2>
             {Events.length === 0 && <p>No events detected yet.</p>}
             {Events.length > 0 && <EventList events={Events} />}
-            <div className="chart-container">
-                <LiveGraph DetectionData={DetectionData} ProcessedFlowData={ProcessedFlowData}/>
-            </div>
             <div className="timer-display">
                 Session Length: {formatTime(timer)}
             </div>
             <Webcam className='webcam' audio={false} mirrored={true} videoConstraints={videoConstraints}/>
+            <div className="chart-container">
+                <LiveGraph DetectionData={DetectionData} ProcessedFlowData={ProcessedFlowData}/>
+            </div>
             <div className="stop-fixed-bottom">
                 <Link to="/session-summary">
                     <button className="stop-button"></button>

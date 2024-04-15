@@ -24,7 +24,8 @@ const LiveGraph = ({ DetectionData, ProcessedFlowData }) => {
       y: [10],  // Value outside the range of the y-axis
       mode: 'markers',
       name: 'Flow',
-      marker: { color: 'green', size: 20, opacity: 0.25, symbol: 'square' }
+      marker: { color: 'green', size: 20, opacity: 0.25, symbol: 'square' },
+      showlegend: true
     },
     {
       x: DetectionData.filter(d => d.detection_type === 'yawn').map(d => new Date(d.timestamp)),
