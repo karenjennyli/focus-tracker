@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import './DetectionData.css';
 import { Link } from 'react-router-dom';
-import 'chart.js/auto';
-import 'chartjs-adapter-moment';
-import { Chart, registerables } from 'chart.js';
 import LiveGraph from './LiveGraph';
 import Webcam from "react-webcam";
 import EventList from './EventList';
 import WebcamCapture from './WebcamCapture';
-Chart.register(...registerables);
+
+import {
+    VStack,
+    HStack,
+    Text,
+    Heading,
+} from '@chakra-ui/react';
 
 function DetectionData() {
     const [DetectionData, setDetectionData] = useState([]);
@@ -34,14 +37,6 @@ function DetectionData() {
                 console.log(data);
             });
     }, []); // Empty array means this runs once on component mount
-
-    // prevent scrolling
-    useEffect(() => {
-        document.body.style.overflow = "hidden";
-        return () => {
-            document.body.style.overflow = "scroll"
-        };
-    }, []);
 
     // fetch detection data
     useEffect(() => {
@@ -118,25 +113,35 @@ function DetectionData() {
     };
     
     return (
-        <div className='current-session-page'>
-            <div>
-                <h1>Current Session</h1>
-            </div>
-            <h2>Latest Events</h2>
-            {<EventList events={Events} />}
-            <div className="timer-display">
-                Session Length: {formatTime(timer)}
-            </div>
-            <Webcam className='webcam' audio={false} mirrored={true} videoConstraints={videoConstraints}/>
-            <div className="chart-container">
-                <LiveGraph DetectionData={DetectionData} ProcessedFlowData={ProcessedFlowData}/>
-            </div>
+        <VStack spacing={8}>
+            <Heading as="h1" fontSize="5xl" fontWeight="bold" color="white" mt={6} mb={2}>
+              Current Session
+            </Heading>
+            <HStack spacing={8}>
+                <VStack spacing={8}>
+                    <HStack spacing={8}>
+                    <div className="timer-display">
+                        Session Length: {formatTime(timer)}
+                    </div>
+                    <Webcam className='webcam' audio={false} mirrored={true} videoConstraints={videoConstraints}/>
+                    </HStack>
+                    <div className='graph-container'>
+                        <LiveGraph DetectionData={DetectionData} ProcessedFlowData={ProcessedFlowData}/>
+                    </div>
+                </VStack>
+                <VStack spacing={2} justify='start' h='full'>
+                    <Heading as="h1" fontSize="3xl" fontWeight="bold" color="white">
+                        Latest Events
+                    </Heading>
+                    {<EventList events={Events} />}
+                </VStack>
+            </HStack>
             <div className="stop-fixed-bottom">
-                <Link to="/session-summary">
-                    <button className="stop-button"></button>
-                </Link>
+                    <Link to="/session-summary">
+                        <button className="stop-button"></button>
+                    </Link>
             </div>
-        </div>
+        </VStack>
     );
 }
 

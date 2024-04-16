@@ -1,6 +1,6 @@
 import React from 'react';
 import EventCard from './EventCard';
-import './EventList.css';
+import './DetectionData.css';
 
 const EventList = ({ events }) => {
   return (

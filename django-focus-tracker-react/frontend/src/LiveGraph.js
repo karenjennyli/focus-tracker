@@ -6,12 +6,13 @@ const Plot = createPlotlyComponent(Plotly);
 
 const LiveGraph = ({ DetectionData, ProcessedFlowData }) => {
 
-  const [min, setMin] = useState(new Date(Date.now() - 10 * 60 * 1000));
+  // min is 5 minutes before the current time
+  const [min, setMin] = useState(new Date(Date.now() - 5 * 60 * 1000));
   const [max, setMax] = useState(new Date());
 
   useEffect(() => {
     const intervalId = setInterval(() => {
-      setMin(new Date(Date.now() - 10 * 60 * 1000));
+      setMin(new Date(Date.now() - 5 * 60 * 1000));
       setMax(new Date());
     }, 1000);
 
@@ -105,7 +106,10 @@ const LiveGraph = ({ DetectionData, ProcessedFlowData }) => {
       t: 50,  // top margin
       pad: 0  // padding
     },
-    dragmode: false
+    dragmode: false,
+    autosize: false,
+    width: 800,
+    height: 500,
   };
 
   return (
