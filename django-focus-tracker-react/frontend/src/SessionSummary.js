@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import './SessionSummary.css';
 import SummaryGraph from './SummaryGraph';
 import { useParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 function SessionSummary() {
     const {sessionIDFromURL} = useParams();
@@ -113,6 +114,11 @@ function SessionSummary() {
             ) : (
                 <p>No flow data available.</p>
             )}
+            <div className="stop-fixed-bottom-2">
+                <Link to={`/session-history`}>
+                    <button className="stop-button-2"></button>
+                </Link>
+            </div>
         </div>
     )
 }

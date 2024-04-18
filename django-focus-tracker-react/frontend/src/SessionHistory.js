@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { Bar } from 'react-chartjs-2';
+import { useNavigate } from 'react-router-dom';
 
 import {
   VStack,
@@ -9,18 +9,8 @@ import {
 } from '@chakra-ui/react';
 
 function SessionHistory() {
-    const [sessions, setSessions] = useState([]);
     const [chartData, setChartData] = useState({});
-
-    useEffect(() => {
-        fetch('http://127.0.0.1:8000/api/sessions')
-            .then(response => response.json())
-            .then(data => {
-                // Handle data
-                setSessions(data);
-            })
-            .catch(error => console.error('Error fetching sessions:', error));
-    }, []);
+    const navigate = useNavigate();
 
     useEffect(() => {
         fetch('http://127.0.0.1:8000/api/session_history')
@@ -45,6 +35,13 @@ function SessionHistory() {
     }, []);
 
     const options = {
+        onClick: (event, elements, chart) => {
+            if (elements.length > 0) {
+                const elementIndex = elements[0].index;
+                const session_id = chartData.labels[elementIndex];
+                navigate(`/session-summary/${session_id}`);
+            }
+        },
         responsive: true,
         animation: {
             duration: 2000,
@@ -89,20 +86,6 @@ function SessionHistory() {
               }
             }
           },
-          title: {
-            display: true,
-            text: 'Distractions for all Sessions',
-            align: 'center',
-            color: 'white',
-            font: {
-                size: 25,
-                weight: 'bold'
-            },
-            padding: {
-                top: 10,
-                bottom: 40,
-              }
-          }
         }
       };
 
@@ -113,17 +96,8 @@ function SessionHistory() {
               Session History
             </Heading>
             <Text maxW="54rem">
-                Click on the graphs below to see a detailed session summary for each work session. 
+                Click on the bar charts below to see a detailed session summary for each work session. 
             </Text>
-            <div>
-                {sessions.map(session => (
-                    <div key={session.session_id}>
-                        <Link to={`/session-summary/${session.session_id}`}>
-                            <p>Session ID: {session.session_id}</p>
-                        </Link>
-                    </div>
-                ))}
-            </div>
             {chartData.labels && (
                 <Bar data={chartData} options={options} />
             )}
