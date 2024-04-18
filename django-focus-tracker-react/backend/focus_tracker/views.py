@@ -1,8 +1,8 @@
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import DetectionEvent, Session, EEGEvent, FlowEvent
-from .serializers import DetectionEventSerializer, EEGEventSerializer, FlowEventSerializer
+from .models import DetectionEvent, Session, EEGEvent, FlowEvent, SessionHistoryEvent
+from .serializers import DetectionEventSerializer, EEGEventSerializer, FlowEventSerializer, SessionHistoryEventSerializer
 from django.shortcuts import get_list_or_404
 from rest_framework import status
 from django.core.files.base import ContentFile
@@ -129,3 +129,42 @@ def get_session_by_id(request, session_id):
         })
     except Session.DoesNotExist:
         return JsonResponse({'error': 'Session not found'}, status=404)
+
+class SessionHistoryDataView(APIView):
+    # def post(self, request, format=None):
+    #     print("Received POST data:", request.data)
+    #     serializer = SessionHistoryEventSerializer(data=request.data, context={'request': request})
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #         # print the validated data
+    #         # print("Saved DetectionEvent:", serializer.validated_data)
+    #         return Response(serializer.data, status=201)
+    #     return Response(serializer.errors, status=400)
+
+    def post(self, request, format=None):
+        print("Received POST data:", request.data)
+        session_id = request.data.get('session_id')
+        total_distractions = request.data.get('total_distractions', 0)
+
+        # Try to retrieve an existing session history record
+        session_history, created = SessionHistoryEvent.objects.get_or_create(
+            session_id=session_id,
+            defaults={'total_distractions': total_distractions}
+        )
+
+        # If the record already exists and isn't just created, update it
+        if not created:
+            session_history.total_distractions = total_distractions
+            session_history.save()
+
+        # Serialize the record to return updated data
+        serializer = SessionHistoryEventSerializer(session_history, context={'request': request})
+        
+        # Choose the response status based on whether the record was created or updated
+        response_status = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+
+        return Response(serializer.data, status=response_status)
+    def get(self, request, *args, **kwargs):
+        session_history_data = SessionHistoryEvent.objects.all()
+        serializer = SessionHistoryEventSerializer(session_history_data, many=True)
+        return Response(serializer.data)

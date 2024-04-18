@@ -54,3 +54,8 @@ class FlowEvent(models.Model):
     def __str__(self):
         # Customize the string representation of the model, for example:
         return f"Event at {self.timestamp_formatted}"
+
+
+class SessionHistoryEvent(models.Model):
+    session_id = models.CharField(max_length=255, null=True)
+    total_distractions = models.IntegerField(default=0)
