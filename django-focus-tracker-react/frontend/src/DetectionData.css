@@ -1,67 +1,10 @@
-.timer-display {
-    /* position: absolute;
-    top: 0;
-    right: 100px;
-    margin-top: 100px;
-    margin-right: 0; */
-    font-size: 20px;
-    background-color: #F08080; 
-    padding: 10px;
-    border-radius: 5px;
-}
-
 .webcam {
     height: 200px;
-    /* position: absolute;
-    top: 0;
-    right: 0;
-    margin-top: 150px;
-    margin-right: 100px; */
     border-radius: 5px;
-}
-
-.stop-fixed-bottom a {
-    position: fixed; /* Fixed position relative to the viewport */
-    right: 20px; /* Distance from the right */
-    bottom: 10px; /* Distance from the bottom */
-    z-index: 1000; /* Ensure it's above other elements */
-    text-decoration: none; /* Removes underline from links */
-}
-  
-  
-.stop-button {
-    padding: 10px 20px;
-    background-color: #FF4136; 
-    color: black;
-    border: none;
-    border-radius: 50%; 
-    cursor: pointer;
-    font-size: 16px;
-    width: 60px; 
-    height: 60px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    transition: background-color 0.3s ease;
-}
-
-.stop-button:hover {
-    background-color: #E82C0C; 
-}
-
-.stop-button:active {
-    background-color: #C22D11;
-    box-shadow: 0 2px #666;
-    transform: translateY(2px);
-}
-
-.stop-button::before {
-    content: '\23F9'; /* Unicode for black square (stop icon) */
-    font-size: 40px;
 }
 
 .event-list-container {
-    height: 65vh;
+    height: 750px;
     overflow-y: auto; /* Enable vertical scrolling */
     border-radius: 8px;
     padding: 16px;

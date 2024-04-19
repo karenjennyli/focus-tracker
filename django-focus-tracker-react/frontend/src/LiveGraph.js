@@ -108,12 +108,11 @@ const LiveGraph = ({ DetectionData, ProcessedFlowData }) => {
     },
     dragmode: false,
     autosize: false,
-    width: 800,
-    height: 500,
+    height: 500
   };
 
   return (
-    <Plot data={chartData} layout={layout} config={{displayModeBar: false}}/>
+    <Plot data={chartData} layout={layout} config={{displayModeBar: false}} style={{ width: '100%', height: '100%' }}/>
   );
 };
 

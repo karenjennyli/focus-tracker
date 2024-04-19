@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { Flex, IconButton, Card, CardBody } from '@chakra-ui/react';
 import './DetectionData.css';
 import { Link } from 'react-router-dom';
 import LiveGraph from './LiveGraph';
 import Webcam from "react-webcam";
 import EventList from './EventList';
 import WebcamCapture from './WebcamCapture';
+import { FaStop } from 'react-icons/fa';
 
 import {
     VStack,
@@ -109,38 +111,59 @@ function DetectionData() {
         const minutes = Math.floor((seconds - (hours * 3600)) / 60);
         const sec = seconds - (hours * 3600) - (minutes * 60);
 
-        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+        return [hours, minutes, sec];
     };
     
     return (
-        <VStack spacing={8}>
+        <VStack spacing={3} justifyContent='stretch'>
             <Heading as="h1" fontSize="5xl" fontWeight="bold" color="white" mt={6} mb={2}>
               Current Session
             </Heading>
-            <HStack spacing={8}>
-                <VStack spacing={8}>
-                    <HStack spacing={8}>
-                    <div className="timer-display">
-                        Session Length: {formatTime(timer)}
-                    </div>
-                    <Webcam className='webcam' audio={false} mirrored={true} videoConstraints={videoConstraints}/>
+            <HStack spacing={8} align='start'>
+                <VStack spacing={6}>
+                    <HStack spacing={6}>
+                        <Card h='200px' w='300px'>
+                            <CardBody>
+                                <Flex direction="column" align="center" justify="center" h="100%">
+                                    <VStack align='center' justify='center' spacing={4}>
+                                        <Text fontSize="md" color="gray.500">
+                                            Time Elapsed
+                                        </Text>
+                                        <Text fontFamily="monospace" fontSize="4xl">
+                                            {formatTime(timer).map(time => time.toString().padStart(2, '0')).join(':')}
+                                        </Text>
+                                        <Link to="/session-summary">
+                                            <IconButton 
+                                                icon={<FaStop />}
+                                                isRound={true}
+                                                colorScheme="red" 
+                                                // TODO: on click, send a POST request to stop recording
+                                                // onClick={() => {
+                                                //     fetch('http://127.0.0.1:8000/api/stop-recording', {
+                                                //         method: 'POST',
+                                                //     })
+                                                //     .then(response => response.json())
+                                                //     .then(data => console.log(data))
+                                                //     .catch((error) => console.error('Error:', error));
+                                                // }}
+                                            >
+                                                Stop
+                                            </IconButton>
+                                        </Link>
+                                    </VStack>
+                                </Flex>
+                            </CardBody>
+                        </Card>
+                        <Webcam className='webcam' audio={false} mirrored={true} videoConstraints={videoConstraints}/>
                     </HStack>
                     <div className='graph-container'>
                         <LiveGraph DetectionData={DetectionData} ProcessedFlowData={ProcessedFlowData}/>
                     </div>
                 </VStack>
                 <VStack spacing={2} justify='start' h='full'>
-                    <Heading as="h1" fontSize="3xl" fontWeight="bold" color="white">
-                        Latest Events
-                    </Heading>
                     {<EventList events={Events} />}
                 </VStack>
             </HStack>
-            <div className="stop-fixed-bottom">
-                    <Link to="/session-summary">
-                        <button className="stop-button"></button>
-                    </Link>
-            </div>
         </VStack>
     );
 }
