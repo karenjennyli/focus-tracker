@@ -7,7 +7,7 @@ import numpy as np
 from inference import get_roboflow_model
 from mediapipe.framework.formats import landmark_pb2
 
-from utils import PHONE_MODEL_ID, PHONE_API_KEY, PHONE_CONFIDENCE_THRESHOLD
+from utils import PHONE_MODEL_ID, PHONE_API_KEY, PHONE_CONFIDENCE_THRESHOLD, PHONE_INTERVAL
 
 
 class PhoneDetector:
@@ -22,6 +22,7 @@ class PhoneDetector:
         self.hands_history = []
         self.phone_detected = False
         self.phone_start_time = None
+        self.last_detection_time = None
         self.model = get_roboflow_model(model_id=PHONE_MODEL_ID, api_key=PHONE_API_KEY)
         self.confidence = confidence
         self.bounding_box_annotator = sv.BoundingBoxAnnotator()
@@ -72,9 +73,9 @@ class PhoneDetector:
                 self.hands_history.pop(0)
             
         if self.holding_phone(self.phones_history, self.hands_history):
-            # TODO: do some check so that we don't duplicate detections within x (5?) seconds of each other
-            if not self.phone_detected and self.phone_start_time and time.time() - self.phone_start_time >= self.min_time:
+            if not self.phone_detected and self.phone_start_time and time.time() - self.phone_start_time >= self.min_time and (not self.last_detection_time or time.time() - self.last_detection_time >= PHONE_INTERVAL):
                 self.phone_detected = True
+                self.last_detection_time = time.time()
                 return True, annotated_image
             elif not self.phone_detected and not self.phone_start_time:
                 self.phone_start_time = time.time()

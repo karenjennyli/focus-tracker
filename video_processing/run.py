@@ -36,6 +36,8 @@ DETECTION_RESULT = None
 FPS_AVG_FRAME_COUNT = 10
 COUNTER, FPS = 0, 0
 START_TIME = time.time()
+OVERALL_COUNTER = 0
+OVERALL_AVG_FPS = 0
 
 session_id = str(uuid.uuid4())
 
@@ -66,6 +68,7 @@ def capture_face_landmarks(cap: cv2.VideoCapture, face_landmarker: vision.FaceLa
 
         # Display the FPS on the image
         cv2.putText(current_frame, 'FPS: {:.2f}'.format(FPS), (10, height - 400), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        cv2.putText(current_frame, 'Overall FPS: {:.2f}'.format(OVERALL_AVG_FPS), (10, height - 370), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
         if FACE_DETECTION_RESULT and FACE_DETECTION_RESULT.face_landmarks:
             draw_face_landmarks(current_frame, FACE_DETECTION_RESULT.face_landmarks[0])
@@ -138,12 +141,17 @@ def run(face_model: str, num_faces: int,
 
     def save_face_result(result: vision.FaceLandmarkerResult,
                     unused_output_image: mp.Image, timestamp_ms: int):
-        global FPS, COUNTER, START_TIME, FACE_DETECTION_RESULT
+        global FPS, COUNTER, START_TIME, FACE_DETECTION_RESULT, OVERALL_COUNTER, OVERALL_AVG_FPS
 
         # Calculate the FPS
         if COUNTER % FPS_AVG_FRAME_COUNT == 0:
             FPS = FPS_AVG_FRAME_COUNT / (time.time() - START_TIME)
             START_TIME = time.time()
+            OVERALL_COUNTER += 1
+            if OVERALL_AVG_FPS == 0:
+                OVERALL_AVG_FPS = FPS
+            else:
+                OVERALL_AVG_FPS = (OVERALL_AVG_FPS * (OVERALL_COUNTER - 1) + FPS) / OVERALL_COUNTER
 
         FACE_DETECTION_RESULT = result
         COUNTER += 1
@@ -260,6 +268,8 @@ def run(face_model: str, num_faces: int,
         
         # Display the FPS on the image
         cv2.putText(current_frame, 'FPS: {:.2f}'.format(FPS), (10, height - 400), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        cv2.putText(current_frame, 'Overall FPS: {:.2f}'.format(OVERALL_AVG_FPS), (10, height - 370), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        cv2.putText(current_frame, 'Time elapsed: {:.2f}'.format(time.time() - START_TIME), (10, height - 340), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
         if FACE_DETECTION_RESULT and FACE_DETECTION_RESULT.face_landmarks and len(FACE_DETECTION_RESULT.face_landmarks) > 0:
             people_detected = people_detector.detect_people(FACE_DETECTION_RESULT.face_landmarks)
