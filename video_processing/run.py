@@ -421,6 +421,7 @@ def update_session_history(total_distractions):
     session_history_data = {
         'session_id': session_id,
         'total_distractions': total_distractions,
+        'timestamp': datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
     }
     resp = requests.post('http://127.0.0.1:8000/api/session_history', json=session_history_data)
     # if response.status_code == 201:

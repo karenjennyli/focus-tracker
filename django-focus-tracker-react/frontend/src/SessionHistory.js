@@ -16,19 +16,29 @@ function SessionHistory() {
         fetch('http://127.0.0.1:8000/api/session_history')
             .then(response => response.json())
             .then(data => {
-                const sessionIds = data.map(session => session.session_id);
-                const distractions = data.map(session => session.total_distractions);
+                const sessionData = data.map(session => ({
+                    sessionId: session.session_id,
+                    distractions: session.total_distractions,
+                    timestamp: new Date(session.timestamp).toLocaleString('default', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })
+                }));
                 setChartData({
-                    labels: sessionIds,
+                    labels: sessionData.map(item => item.timestamp),
                     datasets: [
                         {
                             label: 'Total Distractions',
-                            data: distractions,
+                            data: sessionData.map(item => item.distractions),
                             backgroundColor: 'rgba(75, 192, 192, 0.2)',
                             borderColor: 'rgba(75, 192, 192, 1)',
                             borderWidth: 3,
                         }
-                    ]
+                    ],
+                    sessionIds: sessionData.map(item => item.sessionId)
                 });
             })
             .catch(error => console.error('Error fetching sessions:', error));
@@ -38,7 +48,7 @@ function SessionHistory() {
         onClick: (event, elements, chart) => {
             if (elements.length > 0) {
                 const elementIndex = elements[0].index;
-                const session_id = chartData.labels[elementIndex];
+                const session_id = chartData.sessionIds[elementIndex];
                 navigate(`/session-summary/${session_id}`);
             }
         },
@@ -60,7 +70,8 @@ function SessionHistory() {
                 size: 14,
                 family: 'Arial', 
                 weight: 'bold'
-              }
+              },
+              stepSize: 1,
             }
           },
           x: {
