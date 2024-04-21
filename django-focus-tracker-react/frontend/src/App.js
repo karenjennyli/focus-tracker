@@ -7,6 +7,7 @@ import SessionSummary from './SessionSummary';
 import FeatureComponent from './featureComponent';
 import EmotiveHeadsetComponent from './emotiveHeadsetComponent';
 import CameraCompontent from './cameraComponent';
+import SessionHistory from './SessionHistory';
 
 import {
   ChakraProvider,
@@ -62,7 +63,8 @@ function App() {
             <Route path="/" element={<MainContent />} />
             <Route path="/calibration-page" element={<CalibrationPage />} />
             <Route path="/detection-info" element={<DetectionData />} />
-            <Route path="/session-summary" element={<SessionSummary />} />
+            <Route path="/session-summary/:sessionIDFromURL" element={<SessionSummary />} />
+            <Route path="/session-history" element={<SessionHistory />} />
           </Routes>
         </Grid>
       </Box>

@@ -3,8 +3,11 @@ import { Scatter } from 'react-chartjs-2';
 
 const SummaryGraph = ( { DetectionData, startTime } ) => {
 
-  const min = startTime;
-  const max = new Date();
+//   const min = startTime;
+//   const max = new Date();
+    const dates = DetectionData.map(d => new Date(d.timestamp));
+    const min = dates.length ? new Date(Math.min(...dates)) : startTime;
+    const max = dates.length ? new Date(Math.max(...dates)) : new Date();
 
     // Prepare chart data
     const chartData = {

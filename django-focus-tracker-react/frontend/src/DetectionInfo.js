@@ -104,7 +104,7 @@ function DetectionData() {
                                         <Text fontFamily="monospace" fontSize="4xl">
                                             {formatTime(timer).map(time => time.toString().padStart(2, '0')).join(':')}
                                         </Text>
-                                        <Link to="/session-summary">
+                                        <Link to={`/session-summary/${sessionId}`}>
                                             <IconButton 
                                                 icon={<FaStop />}
                                                 isRound={true}

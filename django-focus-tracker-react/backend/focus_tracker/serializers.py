@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import DetectionEvent, EEGEvent, FlowEvent
+from .models import DetectionEvent, EEGEvent, FlowEvent, SessionHistoryEvent
 from django.conf import settings
 
 class DetectionEventSerializer(serializers.ModelSerializer):
@@ -17,7 +17,7 @@ class DetectionEventSerializer(serializers.ModelSerializer):
         else:
             # return None if there is no image
             return None
-        
+       
 class EEGEventSerializer(serializers.ModelSerializer):
     class Meta:
         model = EEGEvent
@@ -26,4 +26,9 @@ class EEGEventSerializer(serializers.ModelSerializer):
 class FlowEventSerializer(serializers.ModelSerializer):
     class Meta:
         model = FlowEvent
+        fields = '__all__'
+
+class SessionHistoryEventSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SessionHistoryEvent
         fields = '__all__'

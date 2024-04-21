@@ -7,22 +7,37 @@ import EventList from './EventList';
 import FlowPieChart from './FlowPieChart';
 import DetectionsScatterPlot from './DetectionsScatterPlot';
 Chart.register(...registerables);
+import { useParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 function SessionSummary() {
+    const {sessionIDFromURL} = useParams();
     const [DetectionData, setDetectionData] = useState([]);
     const [lastDetectionData, setLastDetectionData] = useState([]);
     const [sessionId, setSessionId] = useState(null);
     const [startTime, setStartTime] = useState(null);
     const [FlowData, setFlowData] = useState([]);
 
+    // useEffect(() => {
+    //     fetch('http://127.0.0.1:8000/api/current_session')
+    //         .then(response => response.json())
+    //         .then(data => {
+    //             setSessionId(data.session_id);
+    //             setStartTime(new Date(data.created_at));
+    //         });
+    // }, []);
+
     useEffect(() => {
-        fetch('http://127.0.0.1:8000/api/current_session')
+        if (!sessionIDFromURL) return;
+
+        fetch(`http://127.0.0.1:8000/api/session/${sessionIDFromURL}`)
             .then(response => response.json())
             .then(data => {
                 setSessionId(data.session_id);
                 setStartTime(new Date(data.created_at));
-            });
-    }, []);
+            })
+            .catch(error => console.error('Error fetching session data:', error));
+    }, [sessionId]);
 
     useEffect(() => {
         if (!sessionId) return;
@@ -99,6 +114,11 @@ function SessionSummary() {
                     <EventList detectionData={DetectionData} />
                 </VStack>
             </HStack>
+            <div className="stop-fixed-bottom-2">
+                <Link to={`/session-history`}>
+                    <button className="stop-button-2"></button>
+                </Link>
+            </div>
         </VStack>
     )
 }
