@@ -6,9 +6,9 @@ import DetectionsBarChart from './DetectionsBarChart';
 import EventList from './EventList';
 import FlowPieChart from './FlowPieChart';
 import DetectionsScatterPlot from './DetectionsScatterPlot';
-Chart.register(...registerables);
 import { useParams } from 'react-router-dom';
 import { Link } from 'react-router-dom';
+Chart.register(...registerables);
 
 function SessionSummary() {
     const {sessionIDFromURL} = useParams();
@@ -104,7 +104,11 @@ function SessionSummary() {
                         <p>No flow data available.</p>
                     )    
                     }
-                    <DetectionsScatterPlot DetectionData={DetectionData} ProcessedFlowData={FlowData} startTime={startTime} />
+                    {DetectionData.length > 0 ? (
+                        <DetectionsScatterPlot DetectionData={DetectionData} ProcessedFlowData={FlowData} startTime={startTime} />
+                    ) : (
+                        <p>No detection data available.</p>
+                    )}
                 </VStack>
                 <VStack spacing={3}>
                     <Heading as='h1' fontSize='2xl' fontWeight='bold' color='white' mt={0} mb={4}>

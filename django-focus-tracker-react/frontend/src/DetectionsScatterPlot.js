@@ -4,8 +4,25 @@ import createPlotlyComponent from 'react-plotly.js/factory';
 const Plot = createPlotlyComponent(Plotly);
 
 const DetectionsScatterPlot = ({ DetectionData, ProcessedFlowData, startTime }) => {
-  const min = startTime;
-  const max = new Date();
+  // const min = startTime;
+  // const max = new Date();
+  const dates = DetectionData.map(d => new Date(d.timestamp));
+  // const min = dates.length ? new Date(Math.min(...dates)) : startTime;
+  // const max = dates.length ? new Date(Math.max(...dates)) : new Date();
+
+  // Assuming dates is an array of date strings and startTime is a valid Date object
+  const minDate = dates.length ? new Date(Math.min(...dates.map(date => new Date(date).getTime()))) : startTime;
+  const maxDate = dates.length ? new Date(Math.max(...dates.map(date => new Date(date).getTime()))) : new Date();
+
+  // Calculate the time difference
+  const timeDiff = maxDate.getTime() - minDate.getTime();
+
+  // Calculate 5% buffer on each side
+  const buffer = timeDiff * 0.05;
+
+  // Add and subtract the buffer from the max and min dates respectively
+  const min = new Date(minDate.getTime() - buffer);
+  const max = new Date(maxDate.getTime() + buffer);
 
   const chartData = [
     {
