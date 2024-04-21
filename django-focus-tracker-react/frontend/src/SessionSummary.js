@@ -1,9 +1,16 @@
 import React, { useEffect, useState } from 'react';
+import { HStack, Heading, VStack } from '@chakra-ui/react';
 import './SessionSummary.css';
-import SummaryGraph from './SummaryGraph';
+import { Chart, registerables } from 'chart.js';
+import DetectionsBarChart from './DetectionsBarChart';
+import EventList from './EventList';
+import FlowPieChart from './FlowPieChart';
+import DetectionsScatterPlot from './DetectionsScatterPlot';
+Chart.register(...registerables);
 
 function SessionSummary() {
     const [DetectionData, setDetectionData] = useState([]);
+    const [lastDetectionData, setLastDetectionData] = useState([]);
     const [sessionId, setSessionId] = useState(null);
     const [startTime, setStartTime] = useState(null);
     const [FlowData, setFlowData] = useState([]);
@@ -23,8 +30,10 @@ function SessionSummary() {
         fetch(`http://127.0.0.1:8000/api/detection-data/?session_id=${sessionId}`)
             .then(response => response.json())
             .then(data => {
+                setDetectionData(data);
                 const filteredData = filterLatestEntries(data);
-                setDetectionData(filteredData);
+                setLastDetectionData(filteredData);
+
             })
             .catch(error => console.error('Error fetching detection data:', error));
     }, [sessionId]);
@@ -45,7 +54,13 @@ function SessionSummary() {
 
         data.forEach(item => {
             // Normalize "gaze left" and "gaze right" to "gaze"
-            const detectionType = item.detection_type.includes('gaze') ? 'gaze' : item.detection_type;
+            // Normalize "user returned" and "user not recognized" to "user left"
+            let detectionType = item.detection_type;
+            if (detectionType.includes('gaze')) {
+                detectionType = 'gaze';
+            } else if (detectionType.includes('user')) {
+                detectionType = 'user left';
+            }
 
             if (!latestEntriesMap[detectionType] || new Date(item.timestamp) > new Date(latestEntriesMap[detectionType].timestamp)) {
                 latestEntriesMap[detectionType] = {
@@ -60,46 +75,31 @@ function SessionSummary() {
     };
 
     return (
-        <div className="session-content">
-            <h1>Session Summary</h1>
-            <div className="productivity-score">
-                <p>Productivity Score: </p>
-                <br></br>
-            </div>
-            <div className="chart-container">
-                <SummaryGraph DetectionData={DetectionData} startTime={startTime} />
-            </div>
-            <h2>Distracted Behaviors Detected</h2>
-            {DetectionData.length > 0 ? (
-                <table className="detection-table-summary">
-                    <thead>
-                        <tr>
-                            <th>Distraction</th>
-                            <th>Frequency</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {DetectionData.map((data, index) => (
-                            <tr key={index}>
-                                <td>{data.detection_type}</td>
-                                <td>{data.frequency}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            ) : (
-                <p>No distraction data available for session {sessionId}.</p>
-            )}
-            {FlowData.length > 0 ? (
-                <div >
-                <h2>Flow Count: {FlowData[0].flowCount}</h2>
-                <h2>Not in Flow Count:  {FlowData[0].notInFlowCount}</h2>
-                <h2>Flow Ratio: {FlowData[0].flowNotFlowRatio}</h2>
-            </div>
-            ) : (
-                <p>No flow data available.</p>
-            )}
-        </div>
+        <VStack spacing={3}>
+            <Heading as="h1" fontSize="5xl" fontWeight="bold" color="white" mt={6} mb={2}>
+              Session Summary
+            </Heading>
+            <HStack spacing={8}>
+                <VStack spacing={3}>
+                    {FlowData.length > 0 ? (
+                        <div style={{ width: '250px', height: '250px' }}>
+                            <FlowPieChart FlowData={FlowData} />
+                        </div>
+                    ) : (
+                        <p>No flow data available.</p>
+                    )    
+                    }
+                    <DetectionsScatterPlot DetectionData={DetectionData} ProcessedFlowData={FlowData} startTime={startTime} />
+                </VStack>
+                <VStack spacing={3}>
+                    <Heading as='h1' fontSize='2xl' fontWeight='bold' color='white' mt={0} mb={4}>
+                        Detected Events
+                    </Heading>
+                    <DetectionsBarChart lastDetectionData={lastDetectionData} displayTitle={false} />
+                    <EventList detectionData={DetectionData} />
+                </VStack>
+            </HStack>
+        </VStack>
     )
 }
 

@@ -18,7 +18,6 @@ import {
 function DetectionData() {
     const [DetectionData, setDetectionData] = useState([]);
     const [ProcessedFlowData, setProcessedFlowData] = useState([]);
-    const [Events, setEvents] = useState([]);
     // Add state to track the current session ID. This is initialized in the run.py file
     const [sessionId, setSessionId] = useState(null);
 
@@ -50,13 +49,6 @@ function DetectionData() {
                 .then(data => {
                     console.log('Updating detection data for session:', sessionId);
                     setDetectionData(data); // Update state with data from the current session
-                    // set the events state with the latest detection data
-                    setEvents(data.map((event) => ({
-                        timestamp: parseAndFormatTime(event.timestamp),
-                        eventType: event.detection_type,
-                        imageUrl: event.image_url,
-                        info: event.aspect_ratio,
-                    })));
                 })
                 .catch(error => console.error('Error fetching distraction data:', error));
             fetch(`http://127.0.0.1:8000/api/flow_data`)
@@ -72,26 +64,6 @@ function DetectionData() {
 
         return () => clearInterval(intervalId); // Cleanup interval on unmount
     }, [sessionId]); // Rerun this effect if sessionId changes
-
-    // Helper function to format timestamp
-    const parseAndFormatTime = (timestamp) => {
-        // Extract the time part (HH:MM:SS) from the timestamp
-        const timePart = timestamp.split('T')[1].split('Z')[0];
-        let [hours, minutes] = timePart.split(':');
-
-        // Convert hours to number 
-        hours = parseInt(hours, 10);
-
-        // Determine AM or PM
-        const ampm = hours >= 12 ? 'PM' : 'AM';
-
-        // Convert to 12-hour format
-        hours = hours % 12;
-        hours = hours ? hours : 12; // the hour '0' should be '12'
-
-        // Return formatted time string
-        return `${hours}:${minutes} ${ampm}`;
-    };
 
     const [timer, setTimer] = useState(0);
 
@@ -161,7 +133,7 @@ function DetectionData() {
                     </div>
                 </VStack>
                 <VStack spacing={2} justify='start' h='full'>
-                    {<EventList events={Events} />}
+                    {<EventList detectionData={DetectionData} displayTitle={true} />}
                 </VStack>
             </HStack>
         </VStack>

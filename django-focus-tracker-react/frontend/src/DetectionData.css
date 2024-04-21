@@ -11,6 +11,15 @@
     width: 500px;
     background-color: #353f53;
   }
+
+  .summary-event-list-container {
+    height: 400px;
+    overflow-y: auto; /* Enable vertical scrolling */
+    border-radius: 8px;
+    padding: 16px;
+    width: 500px;
+    background-color: #353f53;
+  }
   
   .event-list {
     display: flex;
