@@ -53,7 +53,7 @@ function App() {
               pb={2} // reduce bottom padding
             >
               <Text fontSize="lg" fontWeight="bold" color="white">
-                Logo
+                MindFlow
               </Text>
               <Button colorScheme="blue">Home</Button>
             </Flex>

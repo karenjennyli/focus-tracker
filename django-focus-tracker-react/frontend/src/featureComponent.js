@@ -9,7 +9,7 @@ import {
   } from '@chakra-ui/react';
 import {useNavigate} from 'react-router-dom';
 import currentSession from './current_session_image.png'
-import sessionSummary from './session_summary_image.png'
+import sessionHistory from './session_history_image.png'
   
 function FeatureComponent() {
     const navigate = useNavigate();
@@ -38,9 +38,10 @@ function FeatureComponent() {
                 alt="Illustration of connection"
                 position="relative"
                 zIndex="1"
+                border='2px solid white'
             />
             <Image
-                src={sessionSummary}
+                src={sessionHistory}
                 alt="Illustration of transaction"
                 position="absolute"
                 right="-80%"
@@ -48,6 +49,7 @@ function FeatureComponent() {
                 transform="translateY(-10%)"
                 zIndex="0"
                 width="100%" // Used to adjust the width
+                border='2px solid white'
             />
             </Box>
 

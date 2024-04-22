@@ -1,3 +1,8 @@
+.webcam-calibration {
+  height: 380px;
+  border-radius: 5px;
+}
+
 .calibration-intro {
     text-align: center;
     font-size: 20px;

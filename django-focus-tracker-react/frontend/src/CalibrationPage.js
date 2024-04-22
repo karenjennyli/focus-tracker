@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import './CalibrationPage.css';
+import Webcam from "react-webcam";
 
 import {
   VStack,
@@ -10,6 +11,13 @@ import {
 } from '@chakra-ui/react';
 
 function CalibrationPage() {
+
+  const videoConstraints = {
+    width: 1920,
+    height: 1080,
+    facingMode: "user",
+    deviceId: "e4fc9040a6bbd234b0da54ee7c9e5e1796b5ced07398f1ae418c9139b56beb69"
+  }
 
     useEffect(() => {
         // Function to call the Django backend
@@ -34,6 +42,7 @@ function CalibrationPage() {
             <Text maxW="54rem">
               Look into the web camera and adjust the Emotiv Headset until calibration is complete. <br></br> Press the green button below to continue.
             </Text>
+            <Webcam className='webcam-calibration' audio={false} mirrored={true} videoConstraints={videoConstraints}/>
             <div className="container-fixed-bottom">
                 <Link to="/detection-info">
                     <button className="checkmark-button"></button>
