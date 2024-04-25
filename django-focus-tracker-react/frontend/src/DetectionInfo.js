@@ -5,8 +5,10 @@ import { Link } from 'react-router-dom';
 import LiveGraph from './LiveGraph';
 import Webcam from "react-webcam";
 import EventList from './EventList';
-import WebcamCapture from './WebcamCapture';
 import { FaStop } from 'react-icons/fa';
+import axios from 'axios';
+import { v4 as uuidv4 } from 'uuid';
+// import WebcamCapture from './WebcamCapture';
 
 import {
     VStack,
@@ -28,15 +30,21 @@ function DetectionData() {
         deviceId: "e4fc9040a6bbd234b0da54ee7c9e5e1796b5ced07398f1ae418c9139b56beb69"
     }
 
-    // get current session id
+    // create and set current session id
     useEffect(() => {
-        // Fetch the current session_id from the backend
-        fetch('http://127.0.0.1:8000/api/current_session')
-            .then(response => response.json())
-            .then(data => {
-                setSessionId(data.session_id); // Update the sessionId state
-                console.log(data);
-            });
+        const newSessionId = uuidv4();
+    
+        axios.post('http://127.0.0.1:8000/api/current_session', {
+            session_id: newSessionId,
+        })
+        .then(response => {
+            setSessionId(newSessionId);
+            console.log(response.data);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    
     }, []); // Empty array means this runs once on component mount
 
     // fetch detection data

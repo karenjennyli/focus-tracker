@@ -24,7 +24,6 @@ from phone_detector import PhoneDetector
 from face_recognizer import FaceRecognizer
 
 import requests
-import uuid
 import base64
 
 DEBUG_MODE = True
@@ -38,8 +37,6 @@ COUNTER, FPS = 0, 0
 START_TIME = time.time()
 OVERALL_COUNTER = 0
 OVERALL_AVG_FPS = 0
-
-session_id = str(uuid.uuid4())
 
 
 def detect_user_not_recognized(face_recognizer: FaceRecognizer, gaze_detector: GazeDetector, phone_detector: PhoneDetector) -> None:
@@ -208,14 +205,16 @@ def run(face_model: str, num_faces: int,
     def encode_image_to_base64(image):
         _, buffer = cv2.imencode('.jpg', image)
         return base64.b64encode(buffer).decode()
+    
+    def get_session_id():
+        resp = requests.get('http://127.0.0.1:8000/api/current_session')
 
-    if django_enabled:
-        current_session_data = {
-            'session_id': session_id,
-        }
-        resp = requests.post('http://127.0.0.1:8000/api/current_session', json=current_session_data)
-        # if resp.status_code == 201:
-        #         print("Current_session data successfully sent to Django")
+        if resp.status_code == 200:
+            session_id = resp.json()['session_id']
+        else:
+            print("Failed to get session ID")
+        
+        return session_id
 
     # Wait for the user to press the space bar to start the program
     while True:
@@ -245,8 +244,17 @@ def run(face_model: str, num_faces: int,
     people_freq = 0
     user_not_recognized_freq = 0
     total_distractions = 0
+
+    last_session_id_check = time.time()
     # Continuously capture images from the camera and run inference
     while cap.isOpened():
+        if django_enabled and time.time() - last_session_id_check > 1:
+            last_session_id_check = time.time()
+            session_id = get_session_id()
+            if session_id == "":
+                print("No active session.")
+                continue
+
         success, image = cap.read()
         if not success:
             sys.exit(
@@ -278,7 +286,7 @@ def run(face_model: str, num_faces: int,
                 print(f'Other people detected: ', datetime.now().strftime('%H:%M:%S'))
                 people_freq += 1
                 total_distractions += 1
-                update_session_history(total_distractions)
+                update_session_history(session_id, total_distractions)
                 if django_enabled:
                     data = {
                         'session_id': session_id,
@@ -300,7 +308,7 @@ def run(face_model: str, num_faces: int,
                     print(f'Yawn: ', datetime.now().strftime('%Y-%m-%dT%H:%M:%S'), 'MAR: ', mar)
                     yawn_freq += 1
                     total_distractions += 1
-                    update_session_history(total_distractions)
+                    update_session_history(session_id, total_distractions)
                     if django_enabled:
                         data = {
                             'session_id': session_id,
@@ -320,7 +328,7 @@ def run(face_model: str, num_faces: int,
                     print(f'Microsleep: ', datetime.now().strftime('%H:%M:%S'), 'EAR: ', ear)
                     sleep_freq += 1
                     total_distractions += 1
-                    update_session_history(total_distractions)
+                    update_session_history(session_id, total_distractions)
                     if django_enabled:
                         data = {
                             'session_id': session_id,
@@ -341,7 +349,7 @@ def run(face_model: str, num_faces: int,
                     print(f'Gaze: ', datetime.now().strftime('%H:%M:%S'), gaze)
                     gaze_freq += 1
                     total_distractions += 1
-                    update_session_history(total_distractions)
+                    update_session_history(session_id, total_distractions)
                     if django_enabled:
                         data = {
                             'session_id': session_id,
@@ -383,7 +391,7 @@ def run(face_model: str, num_faces: int,
                 print(f'Phone: ', datetime.now().strftime('%H:%M:%S'))
                 phone_freq += 1
                 total_distractions += 1
-                update_session_history(total_distractions)
+                update_session_history(session_id, total_distractions)
                 current_frame = annotated_image
                 if django_enabled:
                     data = {
@@ -464,7 +472,7 @@ def run(face_model: str, num_faces: int,
     cv2.destroyAllWindows()
 
 # Send session history data to Django
-def update_session_history(total_distractions):
+def update_session_history(session_id, total_distractions):
     session_history_data = {
         'session_id': session_id,
         'total_distractions': total_distractions,
