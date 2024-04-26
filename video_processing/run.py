@@ -251,7 +251,7 @@ def run(face_model: str, num_faces: int,
         if django_enabled and time.time() - last_session_id_check > 1:
             last_session_id_check = time.time()
             session_id = get_session_id()
-            if session_id == "":
+            if session_id == "none":
                 print("No active session.")
                 continue
 
@@ -287,7 +287,7 @@ def run(face_model: str, num_faces: int,
                 people_freq += 1
                 total_distractions += 1
                 update_session_history(session_id, total_distractions)
-                if django_enabled:
+                if django_enabled and session_id != "none":
                     data = {
                         'session_id': session_id,
                         'user_id': 'user123',
@@ -309,7 +309,7 @@ def run(face_model: str, num_faces: int,
                     yawn_freq += 1
                     total_distractions += 1
                     update_session_history(session_id, total_distractions)
-                    if django_enabled:
+                    if django_enabled and session_id != "none":
                         data = {
                             'session_id': session_id,
                             'user_id': 'user123',
@@ -329,7 +329,7 @@ def run(face_model: str, num_faces: int,
                     sleep_freq += 1
                     total_distractions += 1
                     update_session_history(session_id, total_distractions)
-                    if django_enabled:
+                    if django_enabled and session_id != "none":
                         data = {
                             'session_id': session_id,
                             'user_id': 'user123',
@@ -350,7 +350,7 @@ def run(face_model: str, num_faces: int,
                     gaze_freq += 1
                     total_distractions += 1
                     update_session_history(session_id, total_distractions)
-                    if django_enabled:
+                    if django_enabled and session_id != "none":
                         data = {
                             'session_id': session_id,
                             'user_id': 'user123',

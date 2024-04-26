@@ -117,15 +117,19 @@ function DetectionData() {
                                                 icon={<FaStop />}
                                                 isRound={true}
                                                 colorScheme="red" 
-                                                // TODO: on click, send a POST request to stop recording
-                                                // onClick={() => {
-                                                //     fetch('http://127.0.0.1:8000/api/stop-recording', {
-                                                //         method: 'POST',
-                                                //     })
-                                                //     .then(response => response.json())
-                                                //     .then(data => console.log(data))
-                                                //     .catch((error) => console.error('Error:', error));
-                                                // }}
+                                                // TODO: on click, send a POST request change session id to "none"
+                                                onClick={() => {
+                                                    axios.post('http://127.0.0.1:8000/api/current_session', {
+                                                        session_id: "none",
+                                                    })
+                                                    .then(response => {
+                                                        setSessionId("none");
+                                                        console.log(response.data);
+                                                    })
+                                                    .catch(error => {
+                                                        console.error('Error:', error);
+                                                    });
+                                                }}
                                             >
                                                 Stop
                                             </IconButton>
