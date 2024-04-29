@@ -1,6 +1,6 @@
 import { Pie } from 'react-chartjs-2';
 
-const FlowPieChart = ({ FlowData }) => {
+const FlowFocusPieChart = ({ FlowData, FocusData, flowFocus }) => {
 
   const options = {
     plugins: {
@@ -19,9 +19,9 @@ const FlowPieChart = ({ FlowData }) => {
   return (
     <Pie
       data={{
-        labels: ['Flow', 'Not in Flow'],
+        labels: flowFocus === 'Flow' ? ['Flow', 'Not in Flow'] : ['Focus', 'Not in Focus'],
         datasets: [{
-          data: [FlowData[0].flowCount, FlowData[0].notInFlowCount],
+          data: flowFocus === 'Flow' ? [FlowData[0].flowCount, FlowData[0].notInFlowCount] : [FocusData[0].focusCount, FocusData[0].notInFocusCount],
           backgroundColor: [
             'green',
             'rgba(192, 75, 75, 1)',
@@ -33,4 +33,4 @@ const FlowPieChart = ({ FlowData }) => {
   );
 }
  
-export default FlowPieChart;
+export default FlowFocusPieChart;

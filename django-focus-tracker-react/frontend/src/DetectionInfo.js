@@ -8,6 +8,7 @@ import EventList from './EventList';
 import { FaStop } from 'react-icons/fa';
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
+import ToggleFlowFocusButton from './ToggleFlowFocusButton';
 // import WebcamCapture from './WebcamCapture';
 
 import {
@@ -153,39 +154,7 @@ function DetectionData() {
                         <Webcam className='webcam' audio={false} mirrored={true} videoConstraints={videoConstraints}/>
                     </HStack>
                     <LiveGraph DetectionData={DetectionData} ProcessedFlowData={ProcessedFlowData} ProcessedFocusData={ProcessedFocusData} selectedButton={selectedButton} />
-                    <Box
-                        display="flex"
-                        justifyContent="center"
-                        alignItems="center"
-                        p={1}
-                        bgColor="#2d3748"
-                        borderRadius="md"
-                    >
-                        <Button
-                            color={selectedButton === 'Flow' ? "white" : "gray.500"}
-                            backgroundColor={selectedButton === 'Flow' ? "#4173b4" : "#35507c"}
-                            width="60px"
-                            size="sm"
-                            onClick={() => setSelectedButton('Flow')}
-                            marginLeft={0.5}
-                            marginRight={0.5}
-                            _hover={{ backgroundColor: "#3f68a2" }}
-                        >
-                            Flow
-                        </Button>
-                        <Button
-                            color={selectedButton === 'Focus' ? "white" : "gray.500"}
-                            backgroundColor={selectedButton === 'Focus' ? "#4173b4" : "#35507c"}
-                            width="60px"
-                            size="sm"
-                            marginLeft={0.5}
-                            marginRight={0.5}
-                            onClick={() => setSelectedButton('Focus')}
-                            _hover={{ backgroundColor: "#3f68a2" }}
-                        >
-                            Focus
-                        </Button>
-                    </Box>
+                    <ToggleFlowFocusButton selectedButton={selectedButton} setSelectedButton={setSelectedButton} />
                 </VStack>
                 <VStack spacing={2} justify='start' h='full'>
                     {<EventList detectionData={DetectionData} displayTitle={true} />}

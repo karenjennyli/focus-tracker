@@ -4,28 +4,22 @@ import './SessionSummary.css';
 import { Chart, registerables } from 'chart.js';
 import DetectionsBarChart from './DetectionsBarChart';
 import EventList from './EventList';
-import FlowPieChart from './FlowPieChart';
+import FlowFocusPieChart from './FlowFocusPieChart';
 import DetectionsScatterPlot from './DetectionsScatterPlot';
 import { useParams } from 'react-router-dom';
 import { Link } from 'react-router-dom';
+import ToggleFlowFocusButton from './ToggleFlowFocusButton';
 Chart.register(...registerables);
 
 function SessionSummary() {
     const {sessionIDFromURL} = useParams();
+    const [selectedButton, setSelectedButton] = useState('Flow');
     const [DetectionData, setDetectionData] = useState([]);
     const [lastDetectionData, setLastDetectionData] = useState([]);
     const [sessionId, setSessionId] = useState(null);
     const [startTime, setStartTime] = useState(null);
     const [FlowData, setFlowData] = useState([]);
-
-    // useEffect(() => {
-    //     fetch('http://127.0.0.1:8000/api/current_session')
-    //         .then(response => response.json())
-    //         .then(data => {
-    //             setSessionId(data.session_id);
-    //             setStartTime(new Date(data.created_at));
-    //         });
-    // }, []);
+    const [FocusData, setFocusData] = useState([]);
 
     useEffect(() => {
         if (!sessionIDFromURL) return;
@@ -61,6 +55,14 @@ function SessionSummary() {
                 setFlowData(data);
             })
             .catch(error => console.error('Error fetching flow state data:', error));
+            console.log('fetching focus data');
+            fetch('http://127.0.0.1:8000/api/focus_data')
+            .then(response => response.json())
+                .then(data => {
+                    setFocusData(data);
+                })
+                .catch(error => console.error('Error fetching focus state data:', error));
+            
     }, []);
 
     // Filter the data to keep only the most recent entry for each detection type
@@ -96,19 +98,36 @@ function SessionSummary() {
             </Heading>
             <HStack spacing={8}>
                 <VStack spacing={3}>
-                    {FlowData.length > 0 ? (
-                        <div style={{ width: '250px', height: '250px' }}>
-                            <FlowPieChart FlowData={FlowData} />
-                        </div>
-                    ) : (
-                        <p>No flow data available.</p>
-                    )    
-                    }
+                    <HStack>
+                        {FlowData.length > 0 ? (
+                            <div style={{ width: '250px', height: '250px' }}>
+                                <FlowFocusPieChart FlowData={FlowData} FocusData={FocusData} flowFocus={'Flow'} />
+                            </div>
+                        ) : (
+                            <p>No flow data available.</p>
+                        )    
+                        }
+                        {FocusData.length > 0 ? (
+                            <div style={{ width: '250px', height: '250px' }}>
+                                <FlowFocusPieChart FlowData={FlowData} FocusData={FocusData} flowFocus={'Focus'} />
+                            </div>
+                        ) : (
+                            <p>No flow data available.</p>
+                        )    
+                        }
+                    </HStack>
                     {DetectionData.length > 0 ? (
-                        <DetectionsScatterPlot DetectionData={DetectionData} ProcessedFlowData={FlowData} startTime={startTime} />
+                        <DetectionsScatterPlot DetectionData={DetectionData} ProcessedFlowData={FlowData} ProcessedFocusData={FocusData} startTime={startTime} selectedButton={selectedButton}/>
                     ) : (
-                        <p>No detection data available.</p>
+                        <p>No data to display.</p>
+                        // // scatter plot with one point 
+                        // <DetectionsScatterPlot DetectionData={[
+                        //     { detection_type: 'gaze', timestamp: new Date().toISOString() }
+                        // ]}
+                        //     ProcessedFlowData={FlowData} startTime={startTime}
+                        // />
                     )}
+                    <ToggleFlowFocusButton selectedButton={selectedButton} setSelectedButton={setSelectedButton} />
                 </VStack>
                 <VStack spacing={3}>
                     <Heading as='h1' fontSize='2xl' fontWeight='bold' color='white' mt={0} mb={4}>
