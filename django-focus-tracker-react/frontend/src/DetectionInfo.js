@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Flex, IconButton, Card, CardBody } from '@chakra-ui/react';
+import { Flex, IconButton, Card, CardBody, ButtonGroup, Button, Box } from '@chakra-ui/react';
 import './DetectionData.css';
 import { Link } from 'react-router-dom';
 import LiveGraph from './LiveGraph';
@@ -22,6 +22,7 @@ function DetectionData() {
     const [ProcessedFlowData, setProcessedFlowData] = useState([]);
     // Add state to track the current session ID. This is initialized in the run.py file
     const [sessionId, setSessionId] = useState(null);
+    const [selectedButton, setSelectedButton] = useState('flow');
 
     const videoConstraints = {
         width: 1920,
@@ -99,8 +100,8 @@ function DetectionData() {
             <Heading as="h1" fontSize="5xl" fontWeight="bold" color="white" mt={6} mb={2}>
               Current Session
             </Heading>
-            <HStack spacing={8} align='start'>
-                <VStack spacing={6}>
+            <HStack spacing={8}>
+                <VStack spacing={2}>
                     <HStack spacing={6}>
                         <Card h='200px' w='300px'>
                             <CardBody>
@@ -140,9 +141,43 @@ function DetectionData() {
                         </Card>
                         <Webcam className='webcam' audio={false} mirrored={true} videoConstraints={videoConstraints}/>
                     </HStack>
-                    <div className='graph-container'>
-                        <LiveGraph DetectionData={DetectionData} ProcessedFlowData={ProcessedFlowData}/>
-                    </div>
+                    <LiveGraph DetectionData={DetectionData} ProcessedFlowData={ProcessedFlowData}/>
+                    <Box
+                        display="flex"
+                        justifyContent="center"
+                        alignItems="center"
+                        p={1}
+                        bgColor="#2d3748"
+                        borderRadius="md"
+                    >
+                        <Button
+                            color="white"
+                            backgroundColor={selectedButton === 'flow' ? "#35507c" : "#4173b4"}
+                            width="60px"
+                            size="sm"
+                            onClick={() => setSelectedButton('flow')}
+                            marginLeft={1}
+                            marginRight={1}
+                            marginTop={0.5}
+                            marginBottom={0.5}
+                            _hover={{ backgroundColor: "#3f68a2" }}
+                        >
+                            Flow
+                        </Button>
+                        <Button
+                            color="white"
+                            backgroundColor={selectedButton === 'focus' ? "#35507c" : "#4173b4"}
+                            width="60px"
+                            size="sm"
+                            marginRight={1}
+                            marginTop={0.5}
+                            marginBottom={0.5}
+                            onClick={() => setSelectedButton('focus')}
+                            _hover={{ backgroundColor: "#3f68a2" }}
+                        >
+                            Focus
+                        </Button>
+                    </Box>
                 </VStack>
                 <VStack spacing={2} justify='start' h='full'>
                     {<EventList detectionData={DetectionData} displayTitle={true} />}
