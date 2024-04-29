@@ -156,10 +156,8 @@ function DetectionData() {
                             width="60px"
                             size="sm"
                             onClick={() => setSelectedButton('flow')}
-                            marginLeft={1}
-                            marginRight={1}
-                            marginTop={0.5}
-                            marginBottom={0.5}
+                            marginLeft={0.5}
+                            marginRight={0.5}
                             _hover={{ backgroundColor: "#3f68a2" }}
                         >
                             Flow
@@ -169,9 +167,8 @@ function DetectionData() {
                             backgroundColor={selectedButton === 'focus' ? "#35507c" : "#4173b4"}
                             width="60px"
                             size="sm"
-                            marginRight={1}
-                            marginTop={0.5}
-                            marginBottom={0.5}
+                            marginLeft={0.5}
+                            marginRight={0.5}
                             onClick={() => setSelectedButton('focus')}
                             _hover={{ backgroundColor: "#3f68a2" }}
                         >
