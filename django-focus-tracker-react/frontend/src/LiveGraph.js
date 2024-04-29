@@ -4,7 +4,7 @@ import createPlotlyComponent from 'react-plotly.js/factory';
 
 const Plot = createPlotlyComponent(Plotly);
 
-const LiveGraph = ({ DetectionData, ProcessedFlowData }) => {
+const LiveGraph = ({ DetectionData, ProcessedFlowData, ProcessedFocusData, selectedButton }) => {
 
   // min is 5 minutes before the current time
   const [min, setMin] = useState(new Date(Date.now() - 5 * 60 * 1000));
@@ -24,8 +24,9 @@ const LiveGraph = ({ DetectionData, ProcessedFlowData }) => {
       x: [min],
       y: [10],  // Value outside the range of the y-axis
       mode: 'markers',
-      name: 'Flow',
-      marker: { color: 'green', size: 20, opacity: 0.25, symbol: 'square' },
+      name: selectedButton === 'Flow' ? 'Flow' : 'Focus',
+      marker: { color: selectedButton === 'Flow' ? 'green' : 'purple',
+                size: 20, opacity: 0.25, symbol: 'square' },
       showlegend: true
     },
     {
@@ -72,19 +73,21 @@ const LiveGraph = ({ DetectionData, ProcessedFlowData }) => {
 
   const layout = {
     shapes: [
-      ...ProcessedFlowData.filter(d => d.flow === 'Flow').map(d => ({
-        type: 'rect',
-        x0: new Date(d.timestamp_epoch * 1000),
-        y0: 0,
-        x1: new Date(d.timestamp_epoch * 1000).setSeconds(new Date(d.timestamp_epoch * 1000).getSeconds() + 5),
-        y1: 6,
-        fillcolor: 'green',
-        opacity: 0.25,
-        line: {
-          color: 'green',
-          width: 0
-        }
-      }))
+      ...(selectedButton === 'Flow' ? ProcessedFlowData : ProcessedFocusData)
+        .filter(d => (selectedButton === 'Flow' ? d.flow : d.focus) === selectedButton)
+        .map(d => ({
+          type: 'rect',
+          x0: new Date(d.timestamp_epoch * 1000),
+          y0: 0,
+          x1: new Date(d.timestamp_epoch * 1000).setSeconds(new Date(d.timestamp_epoch * 1000).getSeconds() + 5),
+          y1: 6,
+          fillcolor: selectedButton === 'Flow' ? 'green' : 'purple',
+          opacity: 0.25,
+          line: {
+            color: selectedButton === 'Flow' ? 'green' : 'purple',
+            width: 0
+          }
+        }))
     ],
     xaxis: {
       range: [min, max],

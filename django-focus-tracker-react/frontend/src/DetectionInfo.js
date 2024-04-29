@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Flex, IconButton, Card, CardBody, ButtonGroup, Button, Box } from '@chakra-ui/react';
+import { Flex, IconButton, Card, CardBody, Button, Box } from '@chakra-ui/react';
 import './DetectionData.css';
 import { Link } from 'react-router-dom';
 import LiveGraph from './LiveGraph';
@@ -20,9 +20,10 @@ import {
 function DetectionData() {
     const [DetectionData, setDetectionData] = useState([]);
     const [ProcessedFlowData, setProcessedFlowData] = useState([]);
+    const [ProcessedFocusData, setProcessedFocusData] = useState([]);
     // Add state to track the current session ID. This is initialized in the run.py file
     const [sessionId, setSessionId] = useState(null);
-    const [selectedButton, setSelectedButton] = useState('flow');
+    const [selectedButton, setSelectedButton] = useState('Flow');
 
     const videoConstraints = {
         width: 1920,
@@ -48,7 +49,7 @@ function DetectionData() {
     
     }, []); // Empty array means this runs once on component mount
 
-    // fetch detection data
+    // fetch data
     useEffect(() => {
         if (!sessionId) return; // Don't fetch data if session ID hasn't been set yet
 
@@ -60,6 +61,7 @@ function DetectionData() {
                     setDetectionData(data); // Update state with data from the current session
                 })
                 .catch(error => console.error('Error fetching distraction data:', error));
+            // fetch flow data
             fetch(`http://127.0.0.1:8000/api/flow_data`)
                 .then(response => response.json())
                 .then(data => {
@@ -67,6 +69,15 @@ function DetectionData() {
                     setProcessedFlowData(data);
                 })
                 .catch(error => console.error('Error fetching flow data:', error));
+            // fetch focus data
+            fetch(`http://127.0.0.1:8000/api/focus_data`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Updating focus data:');
+                    setProcessedFocusData(data);
+                })
+                .catch(error => console.error('Error fetching focus data:', error));
+            
         };
 
         const intervalId = setInterval(fetchData, 500); // Poll every 500 milliseconds (0.5 second)
@@ -141,7 +152,7 @@ function DetectionData() {
                         </Card>
                         <Webcam className='webcam' audio={false} mirrored={true} videoConstraints={videoConstraints}/>
                     </HStack>
-                    <LiveGraph DetectionData={DetectionData} ProcessedFlowData={ProcessedFlowData}/>
+                    <LiveGraph DetectionData={DetectionData} ProcessedFlowData={ProcessedFlowData} ProcessedFocusData={ProcessedFocusData} selectedButton={selectedButton} />
                     <Box
                         display="flex"
                         justifyContent="center"
@@ -151,11 +162,11 @@ function DetectionData() {
                         borderRadius="md"
                     >
                         <Button
-                            color="white"
-                            backgroundColor={selectedButton === 'flow' ? "#35507c" : "#4173b4"}
+                            color={selectedButton === 'Flow' ? "white" : "gray.500"}
+                            backgroundColor={selectedButton === 'Flow' ? "#4173b4" : "#35507c"}
                             width="60px"
                             size="sm"
-                            onClick={() => setSelectedButton('flow')}
+                            onClick={() => setSelectedButton('Flow')}
                             marginLeft={0.5}
                             marginRight={0.5}
                             _hover={{ backgroundColor: "#3f68a2" }}
@@ -163,13 +174,13 @@ function DetectionData() {
                             Flow
                         </Button>
                         <Button
-                            color="white"
-                            backgroundColor={selectedButton === 'focus' ? "#35507c" : "#4173b4"}
+                            color={selectedButton === 'Focus' ? "white" : "gray.500"}
+                            backgroundColor={selectedButton === 'Focus' ? "#4173b4" : "#35507c"}
                             width="60px"
                             size="sm"
                             marginLeft={0.5}
                             marginRight={0.5}
-                            onClick={() => setSelectedButton('focus')}
+                            onClick={() => setSelectedButton('Focus')}
                             _hover={{ backgroundColor: "#3f68a2" }}
                         >
                             Focus

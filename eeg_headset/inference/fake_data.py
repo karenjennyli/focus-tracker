@@ -7,6 +7,8 @@ import requests
 def send_simulated_eeg_data():
     flowCount = 0
     notInFlowCount = 0
+    focusCount = 0
+    notInFocusCount = 0
 
     # Simulate sending data continuously
     while True:
@@ -20,10 +22,10 @@ def send_simulated_eeg_data():
         # Process the data (simulated classification logic)
         input_features = data['pow'][0:5] + data['pow'][10:15] + data['pow'][20:25]
         # Simulated model inference (classification logic)
-        predicted_class = 'Flow' if random.random() > 0.5 else 'Not in Flow'  # Simulate classification result
+        predicted_class_flow = 'Flow' if random.random() > 0.5 else 'Not in Flow'  # Simulate classification result
 
-        print(f"The input vector is classified as: {predicted_class}")
-        if predicted_class == 'Flow':
+        print(f"The input vector is classified as: {predicted_class_flow}")
+        if predicted_class_flow == 'Flow':
             flowCount += 1
         else:
             notInFlowCount += 1
@@ -33,7 +35,7 @@ def send_simulated_eeg_data():
         data_to_send = {
             'timestamp_epoch': data['time'],
             'timestamp_formatted': formatted_time,
-            'flow': predicted_class,
+            'flow': predicted_class_flow,
             'flowCount': flowCount,
             'notInFlowCount': notInFlowCount,
             'predictionSum': flowCount + notInFlowCount,
@@ -44,6 +46,31 @@ def send_simulated_eeg_data():
         response = requests.post('http://127.0.0.1:8000/api/flow_data', json=data_to_send)
         if response.status_code == 201:
             print("EEG Flow State data successfully sent to Django")
+
+        # Do the same thing but for focus
+        predicted_class_focus = 'Focus' if random.random() > 0.5 else 'Not in Focus'
+
+        print(f"The input vector is classified as: {predicted_class_focus}")
+        if predicted_class_focus == 'Focus':
+            focusCount += 1
+        else:
+            notInFocusCount += 1
+
+        # Prepare data for sending
+        data_to_send = {
+            'timestamp_epoch': data['time'],
+            'timestamp_formatted': formatted_time,
+            'focus': predicted_class_focus,
+            'focusCount': focusCount,
+            'notInFocusCount': notInFocusCount,
+            'predictionSum': focusCount + notInFocusCount,
+            'focusNotFocusRatio': focusCount / (focusCount + notInFocusCount) if focusCount + notInFocusCount > 0 else 0
+        }
+
+        # Send data to the server
+        response = requests.post('http://127.0.0.1:8000/api/focus_data', json=data_to_send)
+        if response.status_code == 201:
+            print("EEG Focus State data successfully sent to Django")
 
         # Sleep to simulate 128Hz frequency (approximately 7.8 ms delay)
         time.sleep(5)  # 1 / 128 ≈ 0.0078 seconds

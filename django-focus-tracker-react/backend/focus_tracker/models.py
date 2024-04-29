@@ -55,6 +55,22 @@ class FlowEvent(models.Model):
         # Customize the string representation of the model, for example:
         return f"Event at {self.timestamp_formatted}"
 
+class FocusEvent(models.Model):
+    timestamp_epoch = models.FloatField(help_text="Epoch timestamp of the event")
+    timestamp_formatted = models.CharField(max_length=8, help_text="Formatted time as HH:MM:SS")
+
+    focus = models.CharField(max_length=20, help_text="Focus State (Not in Focus or Focus)", default="")
+    focusCount = models.IntegerField(default=0)
+    notInFocusCount = models.IntegerField(default=0)
+    predictionSum = models.IntegerField(default=0)
+    FocusNotFocusRatio = models.FloatField(default=0.0)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        # Customize the string representation of the model, for example:
+        return f"Event at {self.timestamp_formatted}"
 
 class SessionHistoryEvent(models.Model):
     session_id = models.CharField(max_length=255, null=True)
