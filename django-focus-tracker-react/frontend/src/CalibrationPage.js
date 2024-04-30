@@ -19,19 +19,19 @@ function CalibrationPage() {
     deviceId: "e4fc9040a6bbd234b0da54ee7c9e5e1796b5ced07398f1ae418c9139b56beb69"
   }
 
-    useEffect(() => {
-        // Function to call the Django backend
-        async function startCalibration() {
-          try {
-            await axios.post('http://127.0.0.1:8000/api/start_calibration/');
-            console.log('Calibration started');
-          } catch (error) {
-            console.error('Error starting calibration:', error);
-          }
-        }
+    // useEffect(() => {
+    //     // Function to call the Django backend
+    //     async function startCalibration() {
+    //       try {
+    //         await axios.post('http://127.0.0.1:8000/api/start_calibration/');
+    //         console.log('Calibration started');
+    //       } catch (error) {
+    //         console.error('Error starting calibration:', error);
+    //       }
+    //     }
     
-        startCalibration();
-      }, []);
+    //     startCalibration();
+    //   }, []);
 
     return (
       <VStack spacing={8}>

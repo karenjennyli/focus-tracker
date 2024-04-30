@@ -217,24 +217,24 @@ def run(face_model: str, num_faces: int,
         return session_id
 
     # Wait for the user to press the space bar to start the program
-    while True:
-        success, image = cap.read()
-        if not success:
-            sys.exit(
-                'ERROR: Unable to read from webcam. Please verify your webcam settings.'
-            )
+    # while True:
+    #     success, image = cap.read()
+    #     if not success:
+    #         sys.exit(
+    #             'ERROR: Unable to read from webcam. Please verify your webcam settings.'
+    #         )
 
-        image = cv2.flip(image, 1)
-        current_frame = image
-        cv2.putText(current_frame, 'Press the space bar to start the program.', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-        if lock_window:
-            show_in_window('video_processing', current_frame)
-        else:
-            cv2.imshow('video_processing', current_frame)
-        if cv2.waitKey(1) == 32:
-            # take a snapshot of the current frame and save to calibration_data/template_face.jpg
-            cv2.imwrite('calibration_data/template_face.jpg', current_frame)
-            break
+    #     image = cv2.flip(image, 1)
+    #     current_frame = image
+    #     cv2.putText(current_frame, 'Press the space bar to start the program.', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+    #     if lock_window:
+    #         show_in_window('video_processing', current_frame)
+    #     else:
+    #         cv2.imshow('video_processing', current_frame)
+    #     if cv2.waitKey(1) == 32:
+    #         # take a snapshot of the current frame and save to calibration_data/template_face.jpg
+    #         cv2.imwrite('calibration_data/template_face.jpg', current_frame)
+    #         break
     
     # Initialize the detection frequencies before entering the while cap.isOpened() loop 
     yawn_freq = 0
@@ -246,6 +246,7 @@ def run(face_model: str, num_faces: int,
     total_distractions = 0
 
     last_session_id_check = time.time()
+    last_session_id = "none"
     # Continuously capture images from the camera and run inference
     while cap.isOpened():
         if django_enabled and time.time() - last_session_id_check > 1:
@@ -254,6 +255,20 @@ def run(face_model: str, num_faces: int,
             if session_id == "none":
                 print("No active session.")
                 continue
+            if session_id != last_session_id:
+                print(f"New session started: {session_id}")
+                last_session_id = session_id
+                yawn_freq = 0
+                sleep_freq = 0
+                gaze_freq = 0
+                phone_freq = 0
+                people_freq = 0
+                user_not_recognized_freq = 0
+                total_distractions = 0
+                if face_recognition_enabled:
+                    face_recognizer.history = [True] * face_recognizer.history_length
+                # take a snapshot of the current frame and save to calibration_data/template_face.jpg
+                cv2.imwrite('calibration_data/template_face.jpg', current_frame)
 
         success, image = cap.read()
         if not success:
