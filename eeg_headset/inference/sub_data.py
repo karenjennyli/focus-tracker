@@ -73,7 +73,9 @@ class Subcribe():
         self.model_flow = NeuralNetwork(input_size=input_size, num_classes=num_classes)
         self.model_flow.load_state_dict(torch.load('../neural_network/flow_best_model_checkpoint.pth'))
         self.model_flow.eval()
-
+        self.model_focus = NeuralNetwork(input_size=input_size, num_classes=num_classes)
+        self.model_focus.load_state_dict(torch.load('../neural_network/focus_best_model_checkpoint.pth'))
+        self.model_focus.eval()
         self.flowCount = 0
         self.notInFlowCount = 0
 
