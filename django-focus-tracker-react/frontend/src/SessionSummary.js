@@ -152,11 +152,6 @@ function SessionSummary() {
                     <EventList detectionData={DetectionData} />
                 </VStack>
             </HStack>
-            <div className="stop-fixed-bottom-2">
-                <Link to={`/session-history`}>
-                    <button className="stop-button-2"></button>
-                </Link>
-            </div>
         </VStack>
     )
 }
