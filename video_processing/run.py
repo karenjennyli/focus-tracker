@@ -488,6 +488,8 @@ def run(face_model: str, num_faces: int,
 
 # Send session history data to Django
 def update_session_history(session_id, total_distractions):
+    if session_id == "none":
+        return
     session_history_data = {
         'session_id': session_id,
         'total_distractions': total_distractions,

@@ -19,19 +19,19 @@ function CalibrationPage() {
     deviceId: "e4fc9040a6bbd234b0da54ee7c9e5e1796b5ced07398f1ae418c9139b56beb69"
   }
 
-    // useEffect(() => {
-    //     // Function to call the Django backend
-    //     async function startCalibration() {
-    //       try {
-    //         await axios.post('http://127.0.0.1:8000/api/start_calibration/');
-    //         console.log('Calibration started');
-    //       } catch (error) {
-    //         console.error('Error starting calibration:', error);
-    //       }
-    //     }
-    
-    //     startCalibration();
-    //   }, []);
+    // create and set current session id
+    useEffect(() => {
+      axios.post('http://127.0.0.1:8000/api/current_session', {
+          session_id: 'none',
+      })
+      .then(response => {
+          console.log(response.data);
+      })
+      .catch(error => {
+          console.error('Error:', error);
+      });
+  
+  }, []); // Empty array means this runs once on component mount
 
     return (
       <VStack spacing={8}>

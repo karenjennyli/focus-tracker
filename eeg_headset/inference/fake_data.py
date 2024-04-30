@@ -87,8 +87,11 @@ def send_simulated_eeg_data():
             if response.status_code == 201:
                 print("EEG Focus State data successfully sent to Django")
 
-            # Sleep to simulate 128Hz frequency (approximately 7.8 ms delay)
-            time.sleep(5)  # 1 / 128 ≈ 0.0078 seconds
+        else:
+            print("No session ID available. Waiting for session to start...")
+
+        # Sleep to simulate 128Hz frequency (approximately 7.8 ms delay)
+        time.sleep(5)  # 1 / 128 ≈ 0.0078 seconds
 
 # Call the function to start sending simulated EEG data
 send_simulated_eeg_data()

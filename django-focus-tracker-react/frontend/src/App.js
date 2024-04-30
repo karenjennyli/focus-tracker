@@ -9,6 +9,8 @@ import EmotiveHeadsetComponent from './emotiveHeadsetComponent';
 import CameraCompontent from './cameraComponent';
 import SessionHistory from './SessionHistory';
 import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import axios from 'axios';
 
 import {
   ChakraProvider,
@@ -37,6 +39,20 @@ const theme = extendTheme({ colors });
 function App() {
    const bgColor = useColorModeValue('brand.black', 'gray.800');
    const color = useColorModeValue('white', 'gray.200');
+
+    // create and set current session id
+    useEffect(() => {
+      axios.post('http://127.0.0.1:8000/api/current_session', {
+          session_id: 'none',
+      })
+      .then(response => {
+          console.log(response.data);
+      })
+      .catch(error => {
+          console.error('Error:', error);
+      });
+  
+  }, []); // Empty array means this runs once on component mount
  
   return (
     <ChakraProvider theme={theme}>

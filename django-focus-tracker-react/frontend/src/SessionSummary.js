@@ -9,6 +9,7 @@ import DetectionsScatterPlot from './DetectionsScatterPlot';
 import { useParams } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import ToggleFlowFocusButton from './ToggleFlowFocusButton';
+import axios from 'axios';
 Chart.register(...registerables);
 
 function SessionSummary() {
@@ -20,6 +21,20 @@ function SessionSummary() {
     const [startTime, setStartTime] = useState(null);
     const [FlowData, setFlowData] = useState([]);
     const [FocusData, setFocusData] = useState([]);
+
+    // create and set current session id
+    useEffect(() => {
+        axios.post('http://127.0.0.1:8000/api/current_session', {
+            session_id: 'none',
+        })
+        .then(response => {
+            console.log(response.data);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    
+    }, []); // Empty array means this runs once on component mount
 
     useEffect(() => {
         if (!sessionIDFromURL) return;
