@@ -70,9 +70,9 @@ class Subcribe():
         self.scaler = load('../neural_network/flow_scaler.joblib')
         input_size = 15
         num_classes = 2
-        self.model = NeuralNetwork(input_size=input_size, num_classes=num_classes)
-        self.model.load_state_dict(torch.load('../neural_network/flow_best_model_checkpoint.pth'))
-        self.model.eval()
+        self.model_flow = NeuralNetwork(input_size=input_size, num_classes=num_classes)
+        self.model_flow.load_state_dict(torch.load('../neural_network/flow_best_model_checkpoint.pth'))
+        self.model_flow.eval()
 
         self.flowCount = 0
         self.notInFlowCount = 0
@@ -229,7 +229,8 @@ class Subcribe():
              The values in the array met match the labels in the array labels return at on_new_data_labels
         For example: {'met': [True, 0.5, True, 0.5, 0.0, True, 0.5, True, 0.5, True, 0.5, True, 0.5], 'time': 1627459390.4229}
         """
-        print('received met data')
+        return
+        # print('received met data')
         # print kwargs keys
         # print(kwargs.keys())
         # print(kwargs.get('met'))
@@ -268,7 +269,7 @@ class Subcribe():
             input_tensor = torch.tensor(input_vector_scaled, dtype=torch.float32)
 
             with torch.no_grad():
-                output_flow = self.model(input_tensor)
+                output_flow = self.model_flow(input_tensor)
                 _, predicted_flow = torch.max(output_flow, 1)
 
             class_names_flow = ['Not in Flow', 'Flow']
