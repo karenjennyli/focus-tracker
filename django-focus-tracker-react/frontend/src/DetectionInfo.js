@@ -132,6 +132,16 @@ function DetectionData() {
                                                 colorScheme="red" 
                                                 // TODO: on click, send a POST request change session id to "none"
                                                 onClick={() => {
+                                                    axios.post(`http://127.0.0.1:8000/api/session_length/`, {
+                                                        session_id: sessionId,
+                                                        session_length: timer,
+                                                        })
+                                                        .then(response => {
+                                                            console.log(response.data);
+                                                        })
+                                                        .catch(error => {
+                                                            console.error('Error:', error);
+                                                    });
                                                     axios.post('http://127.0.0.1:8000/api/current_session', {
                                                         session_id: "none",
                                                     })

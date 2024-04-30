@@ -13,7 +13,7 @@
   }
 
   .summary-event-list-container {
-    height: 475px;
+    height: 450px;
     overflow-y: auto; /* Enable vertical scrolling */
     border-radius: 8px;
     padding: 16px;

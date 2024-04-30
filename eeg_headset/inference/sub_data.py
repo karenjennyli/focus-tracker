@@ -4,6 +4,7 @@ from joblib import load
 import requests
 import torch
 from torch import nn
+import time
 
 class NeuralNetwork(nn.Module):
     def __init__(self, input_size, num_classes):
@@ -75,6 +76,9 @@ class Subcribe():
         self.c.bind(new_pow_data=self.on_new_pow_data)
         self.c.bind(new_eq_data=self.on_new_eq_data)
         self.c.bind(inform_error=self.on_inform_error)
+        
+        self.last_time_sent = None
+        self.flow_history = []
 
     def start(self, streams, headsetId=''):
         """
@@ -228,9 +232,9 @@ class Subcribe():
                 'timestamp_formatted': datetime.fromtimestamp(data['time']).strftime('%H:%M:%S'),
                 'focus_pm': data['met'][-1]
             }
-            response = requests.post('http://127.0.0.1:8000/api/eeg_data', json=data)
-            if response.status_code == 201:
-                print("EEG Focus PM data successfully sent to Django")
+            # response = requests.post('http://127.0.0.1:8000/api/eeg_data', json=data)
+            # if response.status_code == 201:
+            #     print("EEG Focus PM data successfully sent to Django")
         
         print('pm data: {}'.format(data))
 
@@ -262,6 +266,9 @@ class Subcribe():
             predicted_class = class_names[predicted.item()]
 
             print(f"The input vector is classified as: {predicted_class}")
+            if self.last_time_sent is None or time.time() - self.last_time_sent > 5:
+                pass
+            
             if predicted_class == 'Flow':
                 self.flowCount += 1
             else:

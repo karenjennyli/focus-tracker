@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import DetectionEvent, EEGEvent, FlowEvent, FocusEvent, SessionHistoryEvent
+from .models import DetectionEvent, EEGEvent, FlowEvent, FocusEvent, SessionHistoryEvent, SessionLength
 from django.conf import settings
 
 class DetectionEventSerializer(serializers.ModelSerializer):
@@ -36,4 +36,9 @@ class FocusEventSerializer(serializers.ModelSerializer):
 class SessionHistoryEventSerializer(serializers.ModelSerializer):
     class Meta:
         model = SessionHistoryEvent
+        fields = '__all__'
+
+class SessionLengthSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SessionLength
         fields = '__all__'
