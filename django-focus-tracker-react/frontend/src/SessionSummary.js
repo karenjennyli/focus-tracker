@@ -31,7 +31,7 @@ function SessionSummary() {
                 setStartTime(new Date(data.created_at));
             })
             .catch(error => console.error('Error fetching session data:', error));
-    }, [sessionId]);
+    }, [sessionId, sessionIDFromURL]);
 
     useEffect(() => {
         if (!sessionId) return;
@@ -49,21 +49,21 @@ function SessionSummary() {
 
     useEffect(() => {
         console.log('fetching flow data');
-        fetch('http://127.0.0.1:8000/api/flow_data')
+        fetch(`http://127.0.0.1:8000/api/flow_data/?session_id=${sessionId}`)
         .then(response => response.json())
             .then(data => {
                 setFlowData(data);
             })
             .catch(error => console.error('Error fetching flow state data:', error));
             console.log('fetching focus data');
-            fetch('http://127.0.0.1:8000/api/focus_data')
+            fetch(`http://127.0.0.1:8000/api/focus_data/?session_id=${sessionId}`)
             .then(response => response.json())
                 .then(data => {
                     setFocusData(data);
                 })
                 .catch(error => console.error('Error fetching focus state data:', error));
             
-    }, []);
+    }, [sessionId]);
 
     // Filter the data to keep only the most recent entry for each detection type
     const filterLatestEntries = (data) => {

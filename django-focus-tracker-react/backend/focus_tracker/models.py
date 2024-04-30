@@ -39,6 +39,7 @@ class EEGEvent(models.Model):
         return f"Event at {self.timestamp_formatted}"
     
 class FlowEvent(models.Model):
+    session_id = models.CharField(max_length=255, null=True)
     timestamp_epoch = models.FloatField(help_text="Epoch timestamp of the event")
     timestamp_formatted = models.CharField(max_length=8, help_text="Formatted time as HH:MM:SS")
 
@@ -56,6 +57,7 @@ class FlowEvent(models.Model):
         return f"Event at {self.timestamp_formatted}"
 
 class FocusEvent(models.Model):
+    session_id = models.CharField(max_length=255, null=True)
     timestamp_epoch = models.FloatField(help_text="Epoch timestamp of the event")
     timestamp_formatted = models.CharField(max_length=8, help_text="Formatted time as HH:MM:SS")
 

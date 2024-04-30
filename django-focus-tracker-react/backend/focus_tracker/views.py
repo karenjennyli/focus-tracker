@@ -109,13 +109,16 @@ class FlowDataView(APIView):
         print(serializer.data)
         return Response(serializer.errors, status=400)
     def get(self, request, *args, **kwargs):
-        eeg_data = FlowEvent.objects.order_by('-timestamp_formatted')
+        session_id = request.query_params.get('session_id')
+        if session_id:
+            eeg_data = FlowEvent.objects.filter(session_id=session_id).order_by('-timestamp_formatted')
+        else:
+            eeg_data = get_list_or_404(FlowEvent)
         serializer = FlowEventSerializer(eeg_data, many=True)
         return Response(serializer.data)
     
 class FocusDataView(APIView):
     def post(self, request, format=None):
-        print("Received Focus POST data:", request.data)
         serializer = FocusEventSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
@@ -126,7 +129,12 @@ class FocusDataView(APIView):
         print(serializer.data)
         return Response(serializer.errors, status=400)
     def get(self, request, *args, **kwargs):
-        eeg_data = FocusEvent.objects.order_by('-timestamp_formatted')
+        session_id = request.query_params.get('session_id')
+        print(session_id)
+        if session_id:
+            eeg_data = FocusEvent.objects.filter(session_id=session_id).order_by('-timestamp_formatted')
+        else:
+            eeg_data = get_list_or_404(FocusEvent)
         serializer = FocusEventSerializer(eeg_data, many=True)
         return Response(serializer.data)
 

@@ -25,8 +25,7 @@ const FlowFocusPieChart = ({ FlowData, FocusData, flowFocus }) => {
           data: flowFocus === 'Flow' ? [FlowData[0].flowCount, FlowData[0].notInFlowCount] : [FocusData[0].focusCount, FocusData[0].notInFocusCount],
           backgroundColor: [
             flowFocus === 'Flow' ? '#b9d8a8' : '#cba4df',
-            '#ededed'
-            // 'rgba(192, 75, 75, 1)',
+            '#d9d7d7'
           ],
         }]
       }}

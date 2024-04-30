@@ -63,7 +63,7 @@ function DetectionData() {
                 })
                 .catch(error => console.error('Error fetching distraction data:', error));
             // fetch flow data
-            fetch(`http://127.0.0.1:8000/api/flow_data`)
+            fetch(`http://127.0.0.1:8000/api/flow_data/?session_id=${sessionId}`)
                 .then(response => response.json())
                 .then(data => {
                     console.log('Updating flow data:');
@@ -71,7 +71,7 @@ function DetectionData() {
                 })
                 .catch(error => console.error('Error fetching flow data:', error));
             // fetch focus data
-            fetch(`http://127.0.0.1:8000/api/focus_data`)
+            fetch(`http://127.0.0.1:8000/api/focus_data/?session_id=${sessionId}`)
                 .then(response => response.json())
                 .then(data => {
                     console.log('Updating focus data:');
