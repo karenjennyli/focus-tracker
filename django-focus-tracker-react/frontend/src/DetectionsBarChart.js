@@ -16,6 +16,7 @@ const DetectionsBarChart = ({ lastDetectionData }) => {
                         size: 14,
                         weight: 'bold'
                     },
+                    stepSize: 1
                 }
             },
             x: {
@@ -34,7 +35,8 @@ const DetectionsBarChart = ({ lastDetectionData }) => {
                 color: 'white',
                 font: {
                   size: 14,
-                  weight: 'bold'
+                  weight: 'bold',
+                  family: 'system-ui, sans-serif'
                 }
               }
             },
@@ -44,7 +46,7 @@ const DetectionsBarChart = ({ lastDetectionData }) => {
   return (
     <Bar data={
         {
-            labels: lastDetectionData.map(item => item.detection_type),
+            labels: lastDetectionData.map(item => item.detection_type.charAt(0).toUpperCase() + item.detection_type.slice(1)),
         datasets: [
                 {
                     label: 'Frequency',
