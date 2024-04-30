@@ -8,8 +8,9 @@ const FlowFocusPieChart = ({ FlowData, FocusData, flowFocus }) => {
         labels: {
           color: 'white',
           font: {
-            size: 14,
-            weight: 'bold'
+            size: 13,
+            weight: 'bold',
+            family: 'system-ui, sans-serif'
           }
         }
       }
@@ -23,8 +24,9 @@ const FlowFocusPieChart = ({ FlowData, FocusData, flowFocus }) => {
         datasets: [{
           data: flowFocus === 'Flow' ? [FlowData[0].flowCount, FlowData[0].notInFlowCount] : [FocusData[0].focusCount, FocusData[0].notInFocusCount],
           backgroundColor: [
-            'green',
-            'rgba(192, 75, 75, 1)',
+            flowFocus === 'Flow' ? '#b9d8a8' : '#cba4df',
+            '#ededed'
+            // 'rgba(192, 75, 75, 1)',
           ],
         }]
       }}
