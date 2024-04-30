@@ -6,12 +6,22 @@ import torch
 from torch import nn
 import time
 
+def get_session_id():
+    resp = requests.get('http://127.0.0.1:8000/api/current_session')
+
+    if resp.status_code == 200:
+        session_id = resp.json()['session_id']
+    else:
+        print("Failed to get session ID")
+
+    return session_id
+
 class NeuralNetwork(nn.Module):
     def __init__(self, input_size, num_classes):
         super(NeuralNetwork, self).__init__()
         self.layer1 = nn.Linear(input_size, 128)
-        self.layer2 = nn.Linear(128, 64)
-        self.layer3 = nn.Linear(64, 32)
+        self.layer2 = nn.Linear(128, 128)
+        self.layer3 = nn.Linear(128, 32)
         self.layer4 = nn.Linear(32, num_classes)
         
     def forward(self, x):
@@ -78,7 +88,6 @@ class Subcribe():
         self.c.bind(inform_error=self.on_inform_error)
         
         self.last_time_sent = None
-        self.flow_history = []
 
     def start(self, streams, headsetId=''):
         """
@@ -168,7 +177,7 @@ class Subcribe():
         data = kwargs.get('data')
         stream_name = data['streamName']
         stream_labels = data['labels']
-        print('{} labels are : {}'.format(stream_name, stream_labels))
+        # print('{} labels are : {}'.format(stream_name, stream_labels))
 
     def on_new_eeg_data(self, *args, **kwargs):
         """
@@ -182,7 +191,7 @@ class Subcribe():
            {'eeg': [99, 0, 4291.795, 4371.795, 4078.461, 4036.41, 4231.795, 0.0, 0], 'time': 1627457774.5166}
         """
         data = kwargs.get('data')
-        print('eeg data: {}'.format(data))
+        # print('eeg data: {}'.format(data))
 
     def on_new_mot_data(self, *args, **kwargs):
         """
@@ -195,7 +204,7 @@ class Subcribe():
         For example: {'mot': [33, 0, 0.493859, 0.40625, 0.46875, -0.609375, 0.968765, 0.187503, -0.250004, -76.563667, -19.584995, 38.281834], 'time': 1627457508.2588}
         """
         data = kwargs.get('data')
-        print('motion data: {}'.format(data))
+        # print('motion data: {}'.format(data))
 
     def on_new_dev_data(self, *args, **kwargs):
         """
@@ -208,7 +217,7 @@ class Subcribe():
         For example:  {'signal': 1.0, 'dev': [4, 4, 4, 4, 4, 100], 'batteryPercent': 80, 'time': 1627459265.4463}
         """
         data = kwargs.get('data')
-        print('dev data: {}'.format(data))
+        # print('dev data: {}'.format(data))
 
     def on_new_met_data(self, *args, **kwargs):
         """
@@ -222,21 +231,21 @@ class Subcribe():
         """
         print('received met data')
         # print kwargs keys
-        print(kwargs.keys())
-        print(kwargs.get('met'))
-        data = kwargs.get('data')
-        print(data)
-        if data['met'][-2] == True:
-            data = {
-                'timestamp_epoch': data['time'],
-                'timestamp_formatted': datetime.fromtimestamp(data['time']).strftime('%H:%M:%S'),
-                'focus_pm': data['met'][-1]
-            }
+        # print(kwargs.keys())
+        # print(kwargs.get('met'))
+        # data = kwargs.get('data')
+        # print(data)
+        # if data['met'][-2] == True:
+        #     data = {
+        #         'timestamp_epoch': data['time'],
+        #         'timestamp_formatted': datetime.fromtimestamp(data['time']).strftime('%H:%M:%S'),
+        #         'focus_pm': data['met'][-1]
+        #     }
             # response = requests.post('http://127.0.0.1:8000/api/eeg_data', json=data)
             # if response.status_code == 201:
             #     print("EEG Focus PM data successfully sent to Django")
         
-        print('pm data: {}'.format(data))
+        # print('pm data: {}'.format(data))
 
     def on_new_pow_data(self, *args, **kwargs):
         """
@@ -248,7 +257,7 @@ class Subcribe():
              The values in the array pow match the labels in the array labels return at on_new_data_labels
         For example: {'pow': [5.251, 4.691, 3.195, 1.193, 0.282, 0.636, 0.929, 0.833, 0.347, 0.337, 7.863, 3.122, 2.243, 0.787, 0.496, 5.723, 2.87, 3.099, 0.91, 0.516, 5.783, 4.818, 2.393, 1.278, 0.213], 'time': 1627459390.1729}
         """
-        if self.eq == True:
+        if self.eq == True and (self.last_time_sent is None or time.time() - self.last_time_sent > 5):
             # values to be passed into model ['POW.AF3.Theta', 'POW.AF3.Alpha', 'POW.AF3.BetaL', 'POW.AF3.BetaH', 'POW.AF3.Gamma', 'POW.AF4.Theta', 'POW.AF4.Alpha', 'POW.AF4.BetaL', 'POW.AF4.BetaH', 'POW.AF4.Gamma','POW.Pz.Theta', 'POW.Pz.Alpha', 'POW.Pz.BetaL', 'POW.Pz.BetaH', 'POW.Pz.Gamma']
             # order of data in data.get('pow'): "AF3/theta","AF3/alpha","AF3/betaL","AF3/betaH","AF3/gamma", "T7/theta","T7/alpha","T7/betaL","T7/betaH","T7/gamma", "Pz/theta","Pz/alpha","Pz/betaL","Pz/betaH","Pz/gamma", "T8/theta","T8/alpha","T8/betaL","T8/betaH","T8/gamma", "AF4/theta","AF4/alpha","AF4/betaL","AF4/betaH","AF4/gamma"
 
@@ -259,33 +268,39 @@ class Subcribe():
             input_tensor = torch.tensor(input_vector_scaled, dtype=torch.float32)
 
             with torch.no_grad():
-                output = self.model(input_tensor)
-                _, predicted = torch.max(output, 1)
+                output_flow = self.model(input_tensor)
+                _, predicted_flow = torch.max(output_flow, 1)
 
-            class_names = ['Not in Flow', 'Flow']
-            predicted_class = class_names[predicted.item()]
+            class_names_flow = ['Not in Flow', 'Flow']
+            predicted_class_flow = class_names_flow[predicted_flow.item()]
 
-            print(f"The input vector is classified as: {predicted_class}")
+            print(f"The input vector is classified as: {predicted_class_flow}")
             if self.last_time_sent is None or time.time() - self.last_time_sent > 5:
                 pass
             
-            if predicted_class == 'Flow':
+            if predicted_class_flow == 'Flow':
                 self.flowCount += 1
             else:
                 self.notInFlowCount += 1
             
-            data = {
-                    'timestamp_epoch': data['time'],
-                    'timestamp_formatted': datetime.fromtimestamp(data['time']).strftime('%H:%M:%S'),
-                    'flow': predicted_class,
-                    'flowCount': self.flowCount,
-                    'notInFlowCount': self.notInFlowCount,
-                    'predictionSum': self.flowCount + self.notInFlowCount,
-                    'flowNotFlowRatio': self.flowCount / (self.flowCount + self.notInFlowCount)
-                }
-            response = requests.post('http://127.0.0.1:8000/api/flow_data', json=data)
-            if response.status_code == 201:
-                print("EEG Flow State data successfully sent to Django")
+            self.last_time_sent = time.time()
+            session_id = get_session_id()
+            if session_id != 'none':
+                data = {
+                        'session_id': session_id,
+                        'timestamp_epoch': data['time'],
+                        'timestamp_formatted': datetime.fromtimestamp(data['time']).strftime('%H:%M:%S'),
+                        'flow': predicted_class_flow,
+                        'flowCount': self.flowCount,
+                        'notInFlowCount': self.notInFlowCount,
+                        'predictionSum': self.flowCount + self.notInFlowCount,
+                        'flowNotFlowRatio': self.flowCount / (self.flowCount + self.notInFlowCount)
+                    }
+                response = requests.post('http://127.0.0.1:8000/api/flow_data', json=data)
+                if response.status_code == 201:
+                    print("EEG Flow State data successfully sent to Django")
+            else:
+                print("Waiting for session to start...")
 
         # data = kwargs.get('data')
         # print('pow data: {}'.format(data))
@@ -294,10 +309,12 @@ class Subcribe():
         # [battery percent, overall eeg quality, sample rate quality, AF3, T7, PZ, T8, AF4]
         # if af3, af4, and pz are all 4, set self.eq to True
         data = kwargs.get('data')
-        if data.get('eq')[-5] == 4 and data.get('eq')[-3] == 4 and data.get('eq')[-1] == 4:
-            self.eq = True
-        else:
-            self.eq = False
+        # if data.get('eq')[-5] == 4 and data.get('eq')[-3] == 4 and data.get('eq')[-1] == 4:
+        #     self.eq = True
+        # else:
+        #     self.eq = False
+        # TODO: change this
+        self.eq = True
 
 
     # callbacks functions
