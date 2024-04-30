@@ -1,15 +1,26 @@
 import React, { useEffect, useState } from 'react';
 import { Bar } from 'react-chartjs-2';
 import { useNavigate } from 'react-router-dom';
+import { Line } from 'react-chartjs-2';
 
 import {
-  VStack,
-  Text,
-  Heading,
+    VStack,
+    HStack,
+    Text,
+    Heading,
+    Table,
+    Thead,
+    Tbody,
+    Tr,
+    Th,
+    Td,
+    Link,
+    Box
 } from '@chakra-ui/react';
 
 function SessionHistory() {
     const [chartData, setChartData] = useState({});
+    const [sessions, setSessions] = useState([]); // Added to store session details directly
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -27,18 +38,23 @@ function SessionHistory() {
                         minute: '2-digit'
                     })
                 }));
+                setSessions(sessionData); // Set sessions for the table
+                // Filter data to exclude sessions with zero distractions before setting chart data
+                const filteredData = sessionData.filter(session => session.distractions > 0);
                 setChartData({
-                    labels: sessionData.map(item => item.timestamp),
+                    labels: filteredData.map(item => item.timestamp),
                     datasets: [
                         {
                             label: 'Total Distractions',
-                            data: sessionData.map(item => item.distractions),
+                            data: filteredData.map(item => item.distractions),
                             backgroundColor: 'rgba(75, 192, 192, 0.2)',
                             borderColor: 'rgba(75, 192, 192, 1)',
                             borderWidth: 3,
+                            fill: true,
+                            tension: 0.1
                         }
                     ],
-                    sessionIds: sessionData.map(item => item.sessionId)
+                    sessionIds: filteredData.map(item => item.sessionId)
                 });
             })
             .catch(error => console.error('Error fetching sessions:', error));
@@ -95,7 +111,7 @@ function SessionHistory() {
           },
         }
       };
-
+      
     return (
       <VStack spacing={8}>
         <VStack spacing={8}>
@@ -106,12 +122,73 @@ function SessionHistory() {
                 Click on the bar charts below to see a detailed session summary for each work session. 
             </Text>
             {chartData.labels && (
-                <Bar data={chartData} options={options} />
+                        <Line data={chartData} options={options} />
             )}
         </VStack>
+        <HStack spacing={10}>
+            <Box width="100%" maxH="250px" overflowY="auto">
+                <Table variant="simple" colorScheme="teal">
+                    <Thead>
+                    <Tr>
+                        <Th color="white" fontFamily="Arial" fontWeight="bold">Date</Th>
+                        <Th color="white" fontFamily="Arial" fontWeight="bold">View Details</Th>
+                    </Tr>
+                    </Thead>
+                    <Tbody>
+                    {sessions.map((session) => (
+                        <Tr key={session.sessionId}>
+                        <Td color="white">{session.timestamp}</Td>
+                        <Td>
+                            <Link color="teal.200" onClick={() => navigate(`/session-summary/${session.sessionId}`)}>
+                            View Summary
+                            </Link>
+                        </Td>
+                        </Tr>
+                    ))}
+                    </Tbody>
+                </Table>
+            </Box>
+          </HStack>
       </VStack>
-    )
-    
+    ) 
+     
+    //   return (
+    //     <VStack spacing={8}>
+    //       <Heading as="h1" fontSize="6xl" fontWeight="bold" color="white" mt={6} mb={2}>
+    //         Session History
+    //       </Heading>
+    //       <Text maxW="54rem">
+    //         Click on the bar charts below to see a detailed session summary for each work session. 
+    //       </Text>
+    //       <HStack spacing={10}>
+    //         {chartData.labels && (
+    //             <Line data={chartData} options={options} />
+    //         )}
+    //         <Box width="100%" maxH="300px" overflowY="auto">
+    //           <Table variant="simple" colorScheme="teal">
+    //             <Thead>
+    //               <Tr>
+    //                 <Th color="white" fontFamily="Arial" fontWeight="bold">Date</Th>
+    //                 <Th color="white" fontFamily="Arial" fontWeight="bold">View Details</Th>
+    //               </Tr>
+    //             </Thead>
+    //             <Tbody>
+    //               {sessions.map((session) => (
+    //                 <Tr key={session.sessionId}>
+    //                   <Td color="white">{session.timestamp}</Td>
+    //                   <Td>
+    //                     <Link color="teal.200" onClick={() => navigate(`/session-summary/${session.sessionId}`)}>
+    //                       View Summary
+    //                     </Link>
+    //                   </Td>
+    //                 </Tr>
+    //               ))}
+    //             </Tbody>
+    //           </Table>
+    //         </Box>
+    //       </HStack>
+    //     </VStack>
+    //   ) 
 }
 
 export default SessionHistory;

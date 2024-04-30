@@ -247,6 +247,7 @@ def run(face_model: str, num_faces: int,
 
     last_session_id_check = time.time()
     last_session_id = "none"
+    counter = 0
     # Continuously capture images from the camera and run inference
     while cap.isOpened():
         if django_enabled and time.time() - last_session_id_check > 1:
@@ -257,6 +258,7 @@ def run(face_model: str, num_faces: int,
                 continue
             if session_id != last_session_id:
                 print(f"New session started: {session_id}")
+                update_session_history(session_id, total_distractions)
                 last_session_id = session_id
                 yawn_freq = 0
                 sleep_freq = 0
@@ -269,6 +271,11 @@ def run(face_model: str, num_faces: int,
                     face_recognizer.history = [True] * face_recognizer.history_length
                 # take a snapshot of the current frame and save to calibration_data/template_face.jpg
                 cv2.imwrite('calibration_data/template_face.jpg', current_frame)
+                
+            # # update session_history in case there are no distractions
+            # if counter == 0:
+            #     update_session_history(session_id, total_distractions)
+            #     counter += 1
 
         success, image = cap.read()
         if not success:
