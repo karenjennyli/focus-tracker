@@ -66,39 +66,28 @@ function SessionSummary() {
     }, [sessionId]);
 
     useEffect(() => {
-        let session_length = 0;
-        if (!sessionId) {
-            setSessionLength(0);
-            return;
-        }
-        fetch(`http://127.0.0.1:8000/api/session_length/?session_id=${sessionId}`)
-        .then(response => response.json())
-        .then(data => {
-            console.log(data);
-            setSessionLength(data[0].session_length);
-            session_length = data[0].session_length;
-            console.log('Session length:', data[0].session_length);
-        })
-        .catch(error => console.error('Error fetching session length:', error));
-
-        console.log('fetching flow data');
-        fetch(`http://127.0.0.1:8000/api/flow_data/?session_id=${sessionId}`)
-        .then(response => response.json())
-        .then(data => {
-            console.log("session_length", session_length);
-            setFlowData(data);
-            setFlowTime(Math.round(data[0].flowCount / (data[0].flowCount + data[0].notInFlowCount) * session_length));
-        })
-        .catch(error => console.error('Error fetching flow state data:', error));
-        console.log('fetching focus data');
-        fetch(`http://127.0.0.1:8000/api/focus_data/?session_id=${sessionId}`)
-        .then(response => response.json())
-        .then(data => {
-            setFocusData(data);
-            setFocusTime(Math.round(data[0].focusCount / (data[0].focusCount + data[0].notInFocusCount) * session_length));
-        })
-        .catch(error => console.error('Error fetching focus state data:', error));
-
+        const fetchData = async () => {
+            try {
+                const response = await fetch(`http://127.0.0.1:8000/api/session_length/?session_id=${sessionId}`);
+                const data = await response.json();
+                setSessionLength(data[0].session_length);
+                const session_length = data[0].session_length;
+    
+                const flowResponse = await fetch(`http://127.0.0.1:8000/api/flow_data/?session_id=${sessionId}`);
+                const flowData = await flowResponse.json();
+                setFlowData(flowData);
+                setFlowTime(Math.round(flowData[0].flowCount / (flowData[0].flowCount + flowData[0].notInFlowCount) * session_length));
+    
+                const focusResponse = await fetch(`http://127.0.0.1:8000/api/focus_data/?session_id=${sessionId}`);
+                const focusData = await focusResponse.json();
+                setFocusData(focusData);
+                setFocusTime(Math.round(focusData[0].focusCount / (focusData[0].focusCount + focusData[0].notInFocusCount) * session_length));
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        };
+    
+        fetchData();
     }, [sessionId]);
 
     // Filter the data to keep only the most recent entry for each detection type
