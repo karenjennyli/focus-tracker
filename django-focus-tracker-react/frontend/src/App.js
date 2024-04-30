@@ -8,6 +8,7 @@ import FeatureComponent from './featureComponent';
 import EmotiveHeadsetComponent from './emotiveHeadsetComponent';
 import CameraCompontent from './cameraComponent';
 import SessionHistory from './SessionHistory';
+import { Link } from 'react-router-dom';
 
 import {
   ChakraProvider,
@@ -44,19 +45,27 @@ function App() {
         <Grid p={3} pt={0}>
           {/* Navigation Bar */}
           <Container maxW="1400px" mx="auto" px={0}>
-            <Flex
-              as="header"
-              width="full"
-              align="center"
-              justifyContent="space-between"
-              pt={5} // reduce top padding
-              pb={2} // reduce bottom padding
-            >
-              <Text fontSize="lg" fontWeight="bold" color="white">
-                MindFlow
-              </Text>
-              <Button colorScheme="blue">Home</Button>
+          <Flex
+            as="header"
+            width="full"
+            align="center"
+            justifyContent="space-between"
+            pt={5} // reduce top padding
+            pb={2} // reduce bottom padding
+          >
+            <Text fontSize="xlg" fontWeight="bold" color="white">
+              MindFlow
+            </Text>
+            <Flex>
+              <Link to="/session-history">
+                <Button colorScheme="blue" width="90px">History</Button>
+              </Link>
+              <div style={{ width: '10px' }}></div>
+              <Link to="/">
+                <Button colorScheme="blue" width="90px">Home</Button>
+              </Link>
             </Flex>
+          </Flex>
           </Container>
 
           <Routes> {/* Use Routes instead of Switch */}
