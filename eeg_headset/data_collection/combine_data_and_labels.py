@@ -1,8 +1,8 @@
 import pandas as pd
 
 # Load the CSV files
-raw_data_path = 'recordings/justin_take_5_raw_data.csv'
-labels_path = 'labels/justin take 5 focus_data_2024-03-11 11:15:50.136.csv'
+raw_data_path = 'recordings/ricky_take_1_raw_data.csv'
+labels_path = 'labels/ricky take 1 focus_data_2024-04-19 13:19:42.489.csv'
 
 raw_data_df = pd.read_csv(raw_data_path)
 labels_df = pd.read_csv(labels_path)

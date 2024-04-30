@@ -56,11 +56,11 @@ class Subcribe():
         print("Subscribe __init__")
         self.c = Cortex(app_client_id, app_client_secret, debug_mode=True, **kwargs)
         self.eq = False
-        self.scaler = load('../neural_network/scaler.joblib')
+        self.scaler = load('../neural_network/flow_scaler.joblib')
         input_size = 15
         num_classes = 2
         self.model = NeuralNetwork(input_size=input_size, num_classes=num_classes)
-        self.model.load_state_dict(torch.load('../neural_network/best_model_checkpoint.pth'))
+        self.model.load_state_dict(torch.load('../neural_network/flow_best_model_checkpoint.pth'))
         self.model.eval()
 
         self.flowCount = 0
@@ -287,7 +287,7 @@ class Subcribe():
         # [battery percent, overall eeg quality, sample rate quality, AF3, T7, PZ, T8, AF4]
         # if af3, af4, and pz are all 4, set self.eq to True
         data = kwargs.get('data')
-        if data.get('eq')[-5] >= 0 and data.get('eq')[-3] >= 0 and data.get('eq')[-1] >= 0:
+        if data.get('eq')[-5] == 4 and data.get('eq')[-3] == 4 and data.get('eq')[-1] == 4:
             self.eq = True
         else:
             self.eq = False

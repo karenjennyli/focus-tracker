@@ -1,12 +1,14 @@
 import pandas as pd
 
 # Load the CSV files
-labeled_data_path = 'labeled_data/labeled_justin_take_5_raw_data.csv'
+labeled_data_path = 'recordings/karen_take_6_focus.csv'
+# labeled_data_path = 'recordings/justin_take_6_raw_data.csv'
+# labeled_data_path = 'labeled_data/labeled_ricky_take_1_raw_data.csv'
 
 labeled_df = pd.read_csv(labeled_data_path)
 
 # Remove data entries without a label
-labeled_df.dropna(subset=['label'], inplace=True)
+# labeled_df.dropna(subset=['label'], inplace=True)
 
 # Remove data entries without frequency band power values
 labeled_df.dropna(subset=['POW.AF3.Theta'], inplace=True)
@@ -54,6 +56,7 @@ file_name = 'filtered_data/' + 'Pz_AF3_AF4_filtered_' + labeled_data_path.split(
 filtered_df.to_csv(file_name, index=False)
 
 print(f'Data exported to {file_name}')
+
 
 # Specify your train, valid, test file names
 train_file_name = 'train/' + 'Pz_AF3_AF4_train_' + labeled_data_path.split('/')[-1]
