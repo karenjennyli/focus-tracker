@@ -53,10 +53,6 @@ function SessionHistory() {
             }
         },
         responsive: true,
-        animation: {
-            duration: 2000,
-            easing: 'easeOutBounce'
-        },
         scales: {
           y: {
             beginAtZero: true,
