@@ -14,8 +14,8 @@ class NeuralNetwork(nn.Module):
     def __init__(self, input_size, num_classes):
         super(NeuralNetwork, self).__init__()
         self.layer1 = nn.Linear(input_size, 128)
-        self.layer2 = nn.Linear(128, 64)
-        self.layer3 = nn.Linear(64, 32)
+        self.layer2 = nn.Linear(128, 128)
+        self.layer3 = nn.Linear(128, 32)
         self.layer4 = nn.Linear(32, num_classes)
         
     def forward(self, x):
@@ -43,8 +43,8 @@ def load_dataset(csv_file, input_columns, label_column):
 
 # Load the test dataset
 input_columns = ['POW.AF3.Theta', 'POW.AF3.Alpha', 'POW.AF3.BetaL', 'POW.AF3.BetaH', 'POW.AF3.Gamma', 'POW.AF4.Theta', 'POW.AF4.Alpha', 'POW.AF4.BetaL', 'POW.AF4.BetaH', 'POW.AF4.Gamma', 'POW.Pz.Theta', 'POW.Pz.Alpha', 'POW.Pz.BetaL', 'POW.Pz.BetaH', 'POW.Pz.Gamma']
-label_column = 'label'
-test_inputs, test_labels = load_dataset('../data_collection/filtered_data/Pz_AF3_AF4_combined_filtered_data_ricky_flow_data.csv', input_columns, label_column)
+label_column = 'Label'
+test_inputs, test_labels = load_dataset('../data_collection/test/Pz_AF3_AF4_combined_test_focus_data.csv', input_columns, label_column)
 
 # Create a Dataset for the test data
 class EEGTestDataset(Dataset):

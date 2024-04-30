@@ -31,7 +31,7 @@ def load_dataset(csv_file, input_columns, label_column):
     labels = df[label_column].map(label_mapping).values
     scaler = StandardScaler()
     inputs = scaler.fit_transform(inputs)
-    dump(scaler, 'flow_scaler.joblib')
+    # dump(scaler, 'flow_scaler.joblib')
     inputs = torch.tensor(inputs, dtype=torch.float32)
     labels = torch.tensor(labels, dtype=torch.long)
     return inputs, labels
