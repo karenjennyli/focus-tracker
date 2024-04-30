@@ -78,3 +78,8 @@ class SessionHistoryEvent(models.Model):
     session_id = models.CharField(max_length=255, null=True)
     total_distractions = models.IntegerField(default=0)
     timestamp = models.DateTimeField(default=timezone.now)
+
+class SessionLength(models.Model):
+    session_id = models.CharField(max_length=255, null=True)
+    session_length = models.FloatField(default=0.0)
+    timestamp = models.DateTimeField(default=timezone.now)

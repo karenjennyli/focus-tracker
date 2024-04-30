@@ -1,8 +1,8 @@
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import DetectionEvent, Session, EEGEvent, FlowEvent, FocusEvent, SessionHistoryEvent
-from .serializers import DetectionEventSerializer, EEGEventSerializer, FlowEventSerializer, FocusEventSerializer, SessionHistoryEventSerializer
+from .models import DetectionEvent, Session, EEGEvent, FlowEvent, FocusEvent, SessionHistoryEvent, SessionLength
+from .serializers import DetectionEventSerializer, EEGEventSerializer, FlowEventSerializer, FocusEventSerializer, SessionHistoryEventSerializer, SessionLengthSerializer
 from django.shortcuts import get_list_or_404
 from rest_framework import status
 from django.core.files.base import ContentFile
@@ -130,7 +130,6 @@ class FocusDataView(APIView):
         return Response(serializer.errors, status=400)
     def get(self, request, *args, **kwargs):
         session_id = request.query_params.get('session_id')
-        print(session_id)
         if session_id:
             eeg_data = FocusEvent.objects.filter(session_id=session_id).order_by('-timestamp_formatted')
         else:
@@ -191,4 +190,21 @@ class SessionHistoryDataView(APIView):
     def get(self, request, *args, **kwargs):
         session_history_data = SessionHistoryEvent.objects.all()
         serializer = SessionHistoryEventSerializer(session_history_data, many=True)
+        return Response(serializer.data)
+
+class SessionLengthDataView(APIView):
+    def post(self, request, format=None):
+        serializer = SessionLengthSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+        else:
+            print("not valid")
+
+    def get(self, request, *args, **kwargs):
+        session_id = request.query_params.get('session_id')
+        # print all session length data
+        print(SessionLength.objects.all())
+        session_length_data = SessionLength.objects.filter(session_id=session_id)
+        serializer = SessionLengthSerializer(session_length_data, many=True)
         return Response(serializer.data)

@@ -65,7 +65,7 @@ def capture_face_landmarks(cap: cv2.VideoCapture, face_landmarker: vision.FaceLa
 
         # Display the FPS on the image
         cv2.putText(current_frame, 'FPS: {:.2f}'.format(FPS), (10, height - 400), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-        cv2.putText(current_frame, 'Overall FPS: {:.2f}'.format(OVERALL_AVG_FPS), (10, height - 370), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        # cv2.putText(current_frame, 'Overall FPS: {:.2f}'.format(OVERALL_AVG_FPS), (10, height - 370), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
         if FACE_DETECTION_RESULT and FACE_DETECTION_RESULT.face_landmarks:
             draw_face_landmarks(current_frame, FACE_DETECTION_RESULT.face_landmarks[0])
@@ -215,26 +215,6 @@ def run(face_model: str, num_faces: int,
             print("Failed to get session ID")
         
         return session_id
-
-    # Wait for the user to press the space bar to start the program
-    # while True:
-    #     success, image = cap.read()
-    #     if not success:
-    #         sys.exit(
-    #             'ERROR: Unable to read from webcam. Please verify your webcam settings.'
-    #         )
-
-    #     image = cv2.flip(image, 1)
-    #     current_frame = image
-    #     cv2.putText(current_frame, 'Press the space bar to start the program.', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-    #     if lock_window:
-    #         show_in_window('video_processing', current_frame)
-    #     else:
-    #         cv2.imshow('video_processing', current_frame)
-    #     if cv2.waitKey(1) == 32:
-    #         # take a snapshot of the current frame and save to calibration_data/template_face.jpg
-    #         cv2.imwrite('calibration_data/template_face.jpg', current_frame)
-    #         break
     
     # Initialize the detection frequencies before entering the while cap.isOpened() loop 
     yawn_freq = 0
@@ -250,6 +230,17 @@ def run(face_model: str, num_faces: int,
     counter = 0
     # Continuously capture images from the camera and run inference
     while cap.isOpened():
+
+        success, image = cap.read()
+        if not success:
+            sys.exit(
+                'ERROR: Unable to read from webcam. Please verify your webcam settings.'
+            )
+
+        image = cv2.flip(image, 1)
+        encoded_image = encode_image_to_base64(image)
+        current_frame = image
+
         if django_enabled and time.time() - last_session_id_check > 1:
             last_session_id_check = time.time()
             session_id = get_session_id()
@@ -277,16 +268,6 @@ def run(face_model: str, num_faces: int,
             #     update_session_history(session_id, total_distractions)
             #     counter += 1
 
-        success, image = cap.read()
-        if not success:
-            sys.exit(
-                'ERROR: Unable to read from webcam. Please verify your webcam settings.'
-            )
-
-        image = cv2.flip(image, 1)
-        encoded_image = encode_image_to_base64(image)
-        current_frame = image
-
         rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_image)
         
@@ -299,12 +280,10 @@ def run(face_model: str, num_faces: int,
         
         # Display the FPS on the image
         cv2.putText(current_frame, 'FPS: {:.2f}'.format(FPS), (10, height - 400), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-        cv2.putText(current_frame, 'Overall FPS: {:.2f}'.format(OVERALL_AVG_FPS), (10, height - 370), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-        cv2.putText(current_frame, 'Time elapsed: {:.2f}'.format(time.time() - START_TIME), (10, height - 340), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
         if FACE_DETECTION_RESULT and FACE_DETECTION_RESULT.face_landmarks and len(FACE_DETECTION_RESULT.face_landmarks) > 0:
             people_detected = people_detector.detect_people(FACE_DETECTION_RESULT.face_landmarks)
-            if people_detected:
+            if people_detected and any(face_recognizer.history):
                 print(f'Other people detected: ', datetime.now().strftime('%H:%M:%S'))
                 people_freq += 1
                 total_distractions += 1
@@ -324,7 +303,7 @@ def run(face_model: str, num_faces: int,
                         print("People data successfully sent to Django")
 
             face_landmarks = FACE_DETECTION_RESULT.face_landmarks[0]
-            if drowsiness_enabled:
+            if drowsiness_enabled and any(face_recognizer.history):
                 yawn_detected, mar = yawn_detector.detect_yawn(face_landmarks)
                 if yawn_detected:
                     print(f'Yawn: ', datetime.now().strftime('%Y-%m-%dT%H:%M:%S'), 'MAR: ', mar)
@@ -365,7 +344,7 @@ def run(face_model: str, num_faces: int,
                         if response.status_code == 201:
                             print("Sleep data successfully sent to Django")
 
-            if gaze_enabled:
+            if gaze_enabled and any(face_recognizer.history):
                 gaze, pitch, yaw, roll = gaze_detector.detect_gaze(face_landmarks)
                 if gaze == 'left' or gaze == 'right':
                     print(f'Gaze: ', datetime.now().strftime('%H:%M:%S'), gaze)
@@ -407,7 +386,7 @@ def run(face_model: str, num_faces: int,
         else:
             hand_landmarks = None
 
-        if phone_enabled:
+        if phone_enabled and any(face_recognizer.history):
             phone_detected, annotated_image = phone_detector.detect_phone(current_frame, hand_landmarks)
             if phone_detected:
                 print(f'Phone: ', datetime.now().strftime('%H:%M:%S'))
@@ -415,7 +394,7 @@ def run(face_model: str, num_faces: int,
                 total_distractions += 1
                 update_session_history(session_id, total_distractions)
                 current_frame = annotated_image
-                if django_enabled:
+                if django_enabled and session_id != "none":
                     data = {
                         'session_id': session_id,
                         'user_id': 'user123',
@@ -440,7 +419,7 @@ def run(face_model: str, num_faces: int,
                         # add 5 sec to account for the time it takes to recognize the user has left
                         away_time += 5
                         print(f'User was away for {away_time} seconds')
-                        if django_enabled:
+                        if django_enabled and session_id != "none":
                             data = {
                                 'session_id': session_id,
                                 'user_id': 'user123',
@@ -462,7 +441,7 @@ def run(face_model: str, num_faces: int,
                         user_not_recognized_freq += 1
                         face_recognizer.user_recognized = False
                         face_recognizer.user_left_time = time.time()
-                        if django_enabled:
+                        if django_enabled and session_id != "none":
                             data = {
                                 'session_id': session_id,
                                 'user_id': 'user123',

@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import DetectionEventView, DetectionDataView, CurrentSessionView, StartCalibration, EEGDataView, FlowDataView, FocusDataView, get_sessions, get_session_by_id, SessionHistoryDataView
+from .views import DetectionEventView, DetectionDataView, CurrentSessionView, StartCalibration, EEGDataView, FlowDataView, FocusDataView, get_sessions, get_session_by_id, SessionHistoryDataView, SessionLengthDataView
 
 urlpatterns = [
     path('api/detections/', DetectionEventView.as_view(), name='detection_events'),
@@ -12,4 +12,5 @@ urlpatterns = [
     path('api/sessions', get_sessions, name='get_sessions'),
     path('api/session/<str:session_id>', get_session_by_id, name='get_session_by_id'),
     path('api/session_history', SessionHistoryDataView.as_view(), name='session_history_data'),
+    path('api/session_length/', SessionLengthDataView.as_view(), name='session_length')
 ]
