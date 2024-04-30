@@ -6,11 +6,17 @@ const Plot = createPlotlyComponent(Plotly);
 const DetectionsScatterPlot = ({ DetectionData, ProcessedFlowData, ProcessedFocusData, startTime, selectedButton }) => {
   // const min = startTime;
   // const max = new Date();
-  const dates = DetectionData.map(d => new Date(d.timestamp));
+  // const dates = DetectionData.map(d => new Date(d.timestamp));
   // const min = dates.length ? new Date(Math.min(...dates)) : startTime;
   // const max = dates.length ? new Date(Math.max(...dates)) : new Date();
 
+  const processedDates = ProcessedFlowData.map(d => new Date(d.created_at));
+  const dates = processedDates.length > 0 ? processedDates : DetectionData.map(d => new Date(d.timestamp));
+
   // Assuming dates is an array of date strings and startTime is a valid Date object
+  // const minDate = dates.length ? new Date(Math.min(...dates.map(date => new Date(date).getTime()))) : startTime;
+  // const maxDate = dates.length ? new Date(Math.max(...dates.map(date => new Date(date).getTime()))) : new Date();
+
   const minDate = dates.length ? new Date(Math.min(...dates.map(date => new Date(date).getTime()))) : startTime;
   const maxDate = dates.length ? new Date(Math.max(...dates.map(date => new Date(date).getTime()))) : new Date();
 

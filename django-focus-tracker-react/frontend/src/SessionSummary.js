@@ -180,7 +180,7 @@ function SessionSummary() {
                         )    
                         }
                     </HStack>
-                    {DetectionData.length > 0 ? (
+                    {(DetectionData.length > 0 || FlowData.length > 0 || FocusData.length > 0 ) ? (
                         <DetectionsScatterPlot DetectionData={DetectionData} ProcessedFlowData={FlowData} ProcessedFocusData={FocusData} startTime={startTime} selectedButton={selectedButton}/>
                     ) : (
                         <p>No data to display.</p>
