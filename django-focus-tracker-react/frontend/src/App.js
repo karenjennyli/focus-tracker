@@ -102,8 +102,8 @@ function MainContent() {
   return (
     <VStack spacing={8}>
       <VStack spacing={8}>
-          <Heading as="h1" fontSize="8xl" fontWeight="bold" color="brand.blue" mt={6} mb={2}>
-            Focus Tracker App
+          <Heading as="h1" fontSize="7xl" fontWeight="bold" color="brand.blue" mt={6} mb={2}>
+            Mindflow Focus Tracker
           </Heading>
           <Text maxW="54rem">
             This app leverages an EEG headset and web camera, employing machine learning algorithms to accurately measure users' focus levels and identify distractions in real time during work sessions. It aims to help users identify actionable steps to enhance their productivity.

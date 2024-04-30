@@ -78,6 +78,8 @@ class Subcribe():
         self.model_focus.eval()
         self.flowCount = 0
         self.notInFlowCount = 0
+        self.focusCount = 0
+        self.notInFocusCount = 0
 
         self.c.bind(create_session_done=self.on_create_session_done)
         self.c.bind(new_data_labels=self.on_new_data_labels)
@@ -273,11 +275,16 @@ class Subcribe():
             with torch.no_grad():
                 output_flow = self.model_flow(input_tensor)
                 _, predicted_flow = torch.max(output_flow, 1)
+                output_focus = self.model_focus(input_tensor)
+                _, predicted_focus = torch.max(output_focus, 1)
 
             class_names_flow = ['Not in Flow', 'Flow']
             predicted_class_flow = class_names_flow[predicted_flow.item()]
+            class_names_focus = ['Not in Focus', 'Focus']
+            predicted_class_focus = class_names_focus[predicted_focus.item()]
 
             print(f"The input vector is classified as: {predicted_class_flow}")
+            print(f"The input vector is classified as: {predicted_class_focus}")
             if self.last_time_sent is None or time.time() - self.last_time_sent > 5:
                 pass
             
@@ -285,11 +292,16 @@ class Subcribe():
                 self.flowCount += 1
             else:
                 self.notInFlowCount += 1
+
+            if predicted_class_focus == 'Focus':
+                self.focusCount += 1
+            else:
+                self.notInFocusCount += 1
             
             self.last_time_sent = time.time()
             session_id = get_session_id()
             if session_id != 'none':
-                data = {
+                flow_data = {
                         'session_id': session_id,
                         'timestamp_epoch': data['time'],
                         'timestamp_formatted': datetime.fromtimestamp(data['time']).strftime('%H:%M:%S'),
@@ -299,9 +311,25 @@ class Subcribe():
                         'predictionSum': self.flowCount + self.notInFlowCount,
                         'flowNotFlowRatio': self.flowCount / (self.flowCount + self.notInFlowCount)
                     }
-                response = requests.post('http://127.0.0.1:8000/api/flow_data', json=data)
+                response = requests.post('http://127.0.0.1:8000/api/flow_data/', json=flow_data)
                 if response.status_code == 201:
                     print("EEG Flow State data successfully sent to Django")
+
+                focus_data = {
+                    'session_id': session_id,
+                    'timestamp_epoch': data['time'],
+                    'timestamp_formatted': datetime.fromtimestamp(data['time']).strftime('%H:%M:%S'),
+                    'focus': predicted_class_focus,
+                    'focusCount': self.focusCount,
+                    'notInFocusCount': self.notInFocusCount,
+                    'predictionSum': self.focusCount + self.notInFocusCount,
+                    'focusNotFocusRatio': self.focusCount / (self.focusCount + self.notInFocusCount)
+                }
+                response = requests.post('http://127.0.0.1:8000/api/focus_data/', json=focus_data)
+                if response.status_code == 201:
+                    print("EEG Focus State data successfully sent to Django")
+                else:
+                    print("Failed to send EEG Focus State data to Django")
             else:
                 print("Waiting for session to start...")
 
