@@ -13,6 +13,21 @@ const FlowFocusPieChart = ({ FlowData, FocusData, flowFocus }) => {
             family: 'system-ui, sans-serif'
           }
         }
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            var label = context.label || '';
+  
+            if (label) {
+              label += ': ';
+            }
+            if (context.parsed.y !== null) {
+              label += context.parsed + '%';
+            }
+            return label;
+          }
+        }
       }
     }
   };
@@ -22,7 +37,9 @@ const FlowFocusPieChart = ({ FlowData, FocusData, flowFocus }) => {
       data={{
         labels: flowFocus === 'Flow' ? ['Flow', 'Not in Flow'] : ['Focus', 'Not in Focus'],
         datasets: [{
-          data: flowFocus === 'Flow' ? [FlowData[0].flowCount, FlowData[0].notInFlowCount] : [FocusData[0].focusCount, FocusData[0].notInFocusCount],
+          // data: flowFocus === 'Flow' ? [FlowData[0].flowCount, FlowData[0].notInFlowCount] : [FocusData[0].focusCount, FocusData[0].notInFocusCount],
+          // display percentages instead of raw counts
+          data: flowFocus === 'Flow' ? [Math.round(100 * FlowData[0].flowCount / (FlowData[0].flowCount + FlowData[0].notInFlowCount)), Math.round(100 * FlowData[0].notInFlowCount / (FlowData[0].flowCount + FlowData[0].notInFlowCount))] : [Math.round(100 * FocusData[0].focusCount / (FocusData[0].focusCount + FocusData[0].notInFocusCount)), Math.round(100 * FocusData[0].notInFocusCount / (FocusData[0].focusCount + FocusData[0].notInFocusCount))],
           backgroundColor: [
             flowFocus === 'Flow' ? '#b9d8a8' : '#cba4df',
             '#d9d7d7'

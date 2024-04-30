@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { HStack, Heading, VStack } from '@chakra-ui/react';
+import { HStack, Heading, VStack, Card, Flex, Text } from '@chakra-ui/react';
 import './SessionSummary.css';
 import { Chart, registerables } from 'chart.js';
 import DetectionsBarChart from './DetectionsBarChart';
@@ -21,6 +21,9 @@ function SessionSummary() {
     const [startTime, setStartTime] = useState(null);
     const [FlowData, setFlowData] = useState([]);
     const [FocusData, setFocusData] = useState([]);
+    const [sessionLength, setSessionLength] = useState(0);
+    const [flowTime, setFlowTime] = useState(0);
+    const [focusTime, setFocusTime] = useState(0);
 
     // create and set current session id
     useEffect(() => {
@@ -63,21 +66,39 @@ function SessionSummary() {
     }, [sessionId]);
 
     useEffect(() => {
+        let session_length = 0;
+        if (!sessionId) {
+            setSessionLength(0);
+            return;
+        }
+        fetch(`http://127.0.0.1:8000/api/session_length/?session_id=${sessionId}`)
+        .then(response => response.json())
+        .then(data => {
+            console.log(data);
+            setSessionLength(data[0].session_length);
+            session_length = data[0].session_length;
+            console.log('Session length:', data[0].session_length);
+        })
+        .catch(error => console.error('Error fetching session length:', error));
+
         console.log('fetching flow data');
         fetch(`http://127.0.0.1:8000/api/flow_data/?session_id=${sessionId}`)
         .then(response => response.json())
-            .then(data => {
-                setFlowData(data);
-            })
-            .catch(error => console.error('Error fetching flow state data:', error));
-            console.log('fetching focus data');
-            fetch(`http://127.0.0.1:8000/api/focus_data/?session_id=${sessionId}`)
-            .then(response => response.json())
-                .then(data => {
-                    setFocusData(data);
-                })
-                .catch(error => console.error('Error fetching focus state data:', error));
-            
+        .then(data => {
+            console.log("session_length", session_length);
+            setFlowData(data);
+            setFlowTime(Math.round(data[0].flowCount / (data[0].flowCount + data[0].notInFlowCount) * session_length));
+        })
+        .catch(error => console.error('Error fetching flow state data:', error));
+        console.log('fetching focus data');
+        fetch(`http://127.0.0.1:8000/api/focus_data/?session_id=${sessionId}`)
+        .then(response => response.json())
+        .then(data => {
+            setFocusData(data);
+            setFocusTime(Math.round(data[0].focusCount / (data[0].focusCount + data[0].notInFocusCount) * session_length));
+        })
+        .catch(error => console.error('Error fetching focus state data:', error));
+
     }, [sessionId]);
 
     // Filter the data to keep only the most recent entry for each detection type
@@ -106,6 +127,15 @@ function SessionSummary() {
         return Object.values(latestEntriesMap);
     };
 
+    // Format timer to HH:MM:SS
+    const formatTime = (seconds) => {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds - (hours * 3600)) / 60);
+        const sec = seconds - (hours * 3600) - (minutes * 60);
+
+        return [hours, minutes, sec];
+    };
+
     return (
         <VStack spacing={3}>
             <Heading as="h1" fontSize="5xl" fontWeight="bold" color="white" mt={6} mb={2}>
@@ -114,8 +144,38 @@ function SessionSummary() {
             <HStack spacing={8}>
                 <VStack spacing={3}>
                     <HStack>
+                        <Card h='200px' w='270px'>
+                            <Flex direction='column' align='center' justify='center' h='100%'>
+                                <VStack align='center' justify='center' spacing={0}>
+                                    <Text fontSize='md' color='gray.500'>
+                                        Total Time
+                                    </Text>
+                                    <Text fontFamily="monospace" fontSize="4xl" marginBottom={3}>
+                                        {formatTime(sessionLength).map(time => time.toString().padStart(2, '0')).join(':')}
+                                    </Text>
+                                    <HStack spacing={6}>
+                                        <VStack>
+                                            <Text fontSize='md' color='gray.500'>
+                                                Flow
+                                            </Text>
+                                            <Text fontFamily="monospace" fontSize="xl">
+                                                {formatTime(flowTime).map(time => time.toString().padStart(2, '0')).join(':')}
+                                            </Text>
+                                        </VStack>
+                                        <VStack>
+                                        <Text fontSize='md' color='gray.500'>
+                                            Focus
+                                        </Text>
+                                        <Text fontFamily="monospace" fontSize="xl">
+                                            {formatTime(focusTime).map(time => time.toString().padStart(2, '0')).join(':')}
+                                        </Text>
+                                    </VStack>
+                                    </HStack>
+                                </VStack>
+                            </Flex>
+                        </Card>
                         {FlowData.length > 0 ? (
-                            <div style={{ width: '250px', height: '250px' }}>
+                            <div style={{ width: '220px', height: '220px' }}>
                                 <FlowFocusPieChart FlowData={FlowData} FocusData={FocusData} flowFocus={'Flow'} />
                             </div>
                         ) : (
@@ -123,7 +183,7 @@ function SessionSummary() {
                         )    
                         }
                         {FocusData.length > 0 ? (
-                            <div style={{ width: '250px', height: '250px' }}>
+                            <div style={{ width: '220px', height: '220px' }}>
                                 <FlowFocusPieChart FlowData={FlowData} FocusData={FocusData} flowFocus={'Focus'} />
                             </div>
                         ) : (
