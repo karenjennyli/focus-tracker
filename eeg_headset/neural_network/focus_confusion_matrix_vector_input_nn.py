@@ -7,6 +7,7 @@ from torch.utils.data import DataLoader, Dataset
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
+import time
 
 # Assuming the NeuralNetwork class and load_dataset function are defined as previously mentioned# Neural Network definition
 class NeuralNetwork(nn.Module):
@@ -29,8 +30,7 @@ def load_dataset(csv_file, input_columns, label_column):
     df = pd.read_csv(csv_file)
     inputs = df[input_columns].values
     
-    # Map labels from -1.0, 0.0, 1.0 to 0 for not in flow and 1 for flow
-    label_mapping = {-1.0: 0, 0.0: 0, 1.0: 1}
+    label_mapping = {-1.0: 0, 0.0: 0, 1.0: 1} 
     labels = df[label_column].map(label_mapping).values
     
     scaler = StandardScaler()
@@ -44,7 +44,7 @@ def load_dataset(csv_file, input_columns, label_column):
 # Load the test dataset
 input_columns = ['POW.AF3.Theta', 'POW.AF3.Alpha', 'POW.AF3.BetaL', 'POW.AF3.BetaH', 'POW.AF3.Gamma', 'POW.AF4.Theta', 'POW.AF4.Alpha', 'POW.AF4.BetaL', 'POW.AF4.BetaH', 'POW.AF4.Gamma', 'POW.Pz.Theta', 'POW.Pz.Alpha', 'POW.Pz.BetaL', 'POW.Pz.BetaH', 'POW.Pz.Gamma']
 label_column = 'label'
-test_inputs, test_labels = load_dataset('../data_collection/test/Pz_AF3_AF4_combined_test_data.csv', input_columns, label_column)
+test_inputs, test_labels = load_dataset('../data_collection/filtered_data/Pz_AF3_AF4_combined_filtered_data_ricky_flow_data.csv', input_columns, label_column)
 
 # Create a Dataset for the test data
 class EEGTestDataset(Dataset):
@@ -63,19 +63,35 @@ test_dataloader = DataLoader(test_dataset, batch_size=10, shuffle=False)
 
 # Load the model with the best validation loss
 model = NeuralNetwork(input_size=15, num_classes=2)
-model.load_state_dict(torch.load('best_model_checkpoint.pth'))
+model.load_state_dict(torch.load('focus_best_model_checkpoint.pth'))
 model.eval()  # Set the model to evaluation mode
 
 # Predictions and actual labels
 all_predictions = []
 all_labels = []
 
+total_time = 0
+total_inputs = 0
+
 with torch.no_grad():
     for inputs, labels in test_dataloader:
+        start_time = time.time()  # Start time measurement
         outputs = model(inputs)
+        end_time = time.time()  # End time measurement
+        
+        # Calculate the time taken for this batch and add to total time
+        batch_time = end_time - start_time
+        total_time += batch_time
+        total_inputs += len(inputs)
+
         _, predicted = torch.max(outputs, 1)
         all_predictions.extend(predicted.numpy())
         all_labels.extend(labels.numpy())
+
+# Calculate the average time per input
+average_time_per_input = total_time / total_inputs if total_inputs > 0 else 0
+
+print(f'Average time per input: {average_time_per_input:.6f} seconds')
 
 # Calculate the confusion matrix
 cm = confusion_matrix(all_labels, all_predictions)
@@ -97,7 +113,7 @@ print(f'Precision: {precision:.4f}')
 print(f'Recall: {recall:.4f}')
 print(f'F1 Score: {f1_score:.4f}')
 
-class_names = ['Not in Flow', 'Flow']
+class_names = ['Distracted', 'Focused']
 
 # Plotting using matplotlib and seaborn for better visualization
 plt.figure(figsize=(8, 6))

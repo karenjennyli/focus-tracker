@@ -1,4 +1,4 @@
-from joblib import dump
+from joblib import dump, load
 import pandas as pd
 import torch
 from torch import nn
@@ -27,13 +27,11 @@ def load_dataset(csv_file, input_columns, label_column):
     df = pd.read_csv(csv_file)
     inputs = df[input_columns].values
     
-    # Map labels from -1.0, 0.0, 1.0 to 0 for not in flow and 1 for flow
-    label_mapping = {-1.0: 0, 0.0: 0, 1.0: 1}
-    labels = df[label_column].map(label_mapping).values
+    labels = df[label_column]
     
     scaler = StandardScaler()
     inputs = scaler.fit_transform(inputs)
-    dump(scaler, 'scaler.joblib')
+    dump(scaler, 'focus_scaler.joblib')
     
     inputs = torch.tensor(inputs, dtype=torch.float32)
     labels = torch.tensor(labels, dtype=torch.long)  # Ensure labels are long type for CrossEntropyLoss
@@ -56,9 +54,9 @@ class EEGDataset(Dataset):
 # Load datasets
 # input_columns = ['EEG.AF3', 'POW.AF3.Theta', 'POW.AF3.Alpha', 'POW.AF3.BetaL', 'POW.AF3.BetaH', 'POW.AF3.Gamma', 'EEG.AF4', 'POW.AF4.Theta', 'POW.AF4.Alpha', 'POW.AF4.BetaL', 'POW.AF4.BetaH', 'POW.AF4.Gamma', 'EEG.Pz', 'POW.Pz.Theta', 'POW.Pz.Alpha', 'POW.Pz.BetaL', 'POW.Pz.BetaH', 'POW.Pz.Gamma']
 input_columns = ['POW.AF3.Theta', 'POW.AF3.Alpha', 'POW.AF3.BetaL', 'POW.AF3.BetaH', 'POW.AF3.Gamma', 'POW.AF4.Theta', 'POW.AF4.Alpha', 'POW.AF4.BetaL', 'POW.AF4.BetaH', 'POW.AF4.Gamma','POW.Pz.Theta', 'POW.Pz.Alpha', 'POW.Pz.BetaL', 'POW.Pz.BetaH', 'POW.Pz.Gamma']
-label_column = 'label'
-train_inputs, train_labels = load_dataset('../data_collection/train/Pz_AF3_AF4_combined_train_data.csv', input_columns, label_column)
-val_inputs, val_labels = load_dataset('../data_collection/valid/Pz_AF3_AF4_combined_valid_data.csv', input_columns, label_column)
+label_column = 'Label'
+train_inputs, train_labels = load_dataset('../data_collection/train/Pz_AF3_AF4_combined_train_focus_data.csv', input_columns, label_column)
+val_inputs, val_labels = load_dataset('../data_collection/valid/Pz_AF3_AF4_combined_valid_focus_data.csv', input_columns, label_column)
 
 # Create dataloaders
 train_dataset = EEGDataset(train_inputs, train_labels)
@@ -102,6 +100,6 @@ for epoch in range(epochs):
     
     if avg_val_loss < best_val_loss:
         best_val_loss = avg_val_loss
-        torch.save(model.state_dict(), 'best_model_checkpoint.pth')
+        torch.save(model.state_dict(), 'focus_best_model_checkpoint.pth')
         print('Best model saved!')
 
